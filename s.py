@@ -143,3 +143,7 @@ def update_client_names_display(name_list):
     tkDisplay.config(state=tk.DISABLED)
 
 window.mainloop()
+
+#
+# eof
+#
