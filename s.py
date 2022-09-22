@@ -86,7 +86,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
     # send welcome message to client
     client_name  = client_connection.recv(4096).decode()
-    welcome_msg = "Conectado. Hola " + client_name + ". Escribe'fin' para salir."
+    welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars."
     client_connection.send(welcome_msg.encode())
 
     clients_names.append(client_name)
@@ -106,7 +106,8 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
         for c in clients:
             if c != client_connection:
-                server_msg = str(sending_client_name + "->" + client_msg)
+#                server_msg = str(sending_client_name + "->" + client_msg)
+                server_msg = str(client_msg)
                 c.send(server_msg.encode())
 
     # find the client index then remove from both lists(client name list and connection list)
@@ -142,4 +143,3 @@ def update_client_names_display(name_list):
     tkDisplay.config(state=tk.DISABLED)
 
 window.mainloop()
-
