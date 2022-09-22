@@ -11,7 +11,7 @@ window = tk.Tk()
 window.title("Cliente")
 username = " "
 
-# username = "182DA782"
+userid = "182DA782"
 
 topFrame = tk.Frame(window)
 lblName = tk.Label(topFrame, text = "Nombre:").pack(side=tk.LEFT)
@@ -90,8 +90,7 @@ def receive_message_from_server(sck, m):
         if len(texts) < 1:
             tkDisplay.insert(tk.END, from_server)
         else:
-            aaa='182DA782'
-            comando='echo ' + '1234' + '| gpg -u ' + aaa + ' -e -a --no-comment --no-verbose -r 182DA782'
+            comando='echo ' + from_server + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
             p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
 #            print(p.stdout )
 
@@ -149,3 +148,19 @@ def send_mssage_to_server(msg):
     print("Enviando")
 
 window.mainloop()
+
+
+# decrypt it. 
+#            comando="echo '" + from_server + "' | gpg -d -u " + userid 
+#            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
+#            print(p.stdout )
+#            tkDisplay.insert(tk.END, "\n" + p.stdout )
+
+#            comando='echo ' + '1234' + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+#            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
+#             msg2 = 'echo ' + client_msg + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+
+
+#            comando='echo ' + from_server + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+#            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
+
