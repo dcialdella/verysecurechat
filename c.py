@@ -90,9 +90,13 @@ def receive_message_from_server(sck, m):
         if len(texts) < 1:
             tkDisplay.insert(tk.END, from_server)
         else:
-            cp = subprocess.run(['ls','-l'], capture_output=True, text=True)
-#            pp = subprocess.Popen("ls -lh", stdout=subprocess.PIPE, shell=True, universal_newlines=True, text=True )
-            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n..." + cp.stdout )
+            aaa='182DA782'
+            comando='echo ' + '1234' + '| gpg -u ' + aaa + ' -e -a --no-comment --no-verbose -r 182DA782'
+            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
+#            print(p.stdout )
+
+#            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
+            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
 #            tkDisplay.insert(tk.END, "\n" + cp ) 
 #            tkDisplay.insert(tk.END, "\n" + pp ) 
 
