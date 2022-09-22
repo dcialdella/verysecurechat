@@ -145,5 +145,5 @@ def update_client_names_display(name_list):
 window.mainloop()
 
 #
-# eof
+# EOF
 #
