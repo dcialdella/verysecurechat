@@ -134,14 +134,16 @@ def getChatMessage(msg):
     tkDisplay.config(state=tk.DISABLED)
 
 
-    send_mssage_to_server(msg)
+    send_msg_to_server(msg)
 
     tkDisplay.see(tk.END)
     tkMessage.delete('1.0', tk.END)
 
 
-def send_mssage_to_server(msg):
+def send_msg_to_server(msg):
     client_msg = str(msg)
+
+    client_msg = '-' + client_msg + '-'
     client.send(client_msg.encode())
 
 # Encriptar el mensaje para el cliente destino que queremos
