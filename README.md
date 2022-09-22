@@ -10,3 +10,5 @@ Every client will encript message before send it.
 
 Every client will try to de-crypt message, if the message is not for him will be discarted.
 
+You need GPG instgalled and Pub/Priv key (you) and PUB keys for others.
+Tested in xUbuntu.
