@@ -94,8 +94,12 @@ def receive_message_from_server(sck, m):
             p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
 #            print(p.stdout )
 
+#            comando='echo ' + from_server + ' | gpg -d -u ' + userid 
+#            p2 = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
+
 #            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
             tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
+#            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p2.stdout )
 #            tkDisplay.insert(tk.END, "\n" + cp ) 
 #            tkDisplay.insert(tk.END, "\n" + pp ) 
 
