@@ -143,7 +143,7 @@ def getChatMessage(msg):
 def send_msg_to_server(msg):
     client_msg = str(msg)
 
-    client_msg = '-' + client_msg + '-'
+    print( client_msg )
     client.send(client_msg.encode())
 
 # Encriptar el mensaje para el cliente destino que queremos
@@ -155,6 +155,9 @@ def send_msg_to_server(msg):
 
 window.mainloop()
 
+#
+# EOF
+#
 
 # decrypt it. 
 #            comando="echo '" + from_server + "' | gpg -d -u " + userid 
