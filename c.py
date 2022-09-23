@@ -156,7 +156,7 @@ def send_msg_to_server(msg):
     print("Enviando")
 
 window.mainloop()
-
+ 
 #
 # EOF
 #
