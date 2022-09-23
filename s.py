@@ -22,7 +22,7 @@ lblHost.pack(side=tk.LEFT)
 lblPort = tk.Label(middleFrame, text = "Port:XXXX")
 lblPort.pack(side=tk.LEFT)
 middleFrame.pack(side=tk.TOP, pady=(5, 0))
-
+ 
 # The client frame shows the client area
 clientFrame = tk.Frame(window)
 lblLine = tk.Label(clientFrame, text="********** Usuarios Conectados **********").pack()
