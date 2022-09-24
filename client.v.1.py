@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.2
+# v 1.4
 
 import tkinter as tk
 from tkinter import messagebox
@@ -171,7 +171,7 @@ def send_msg_to_server(msg):
             print( 'LINE  D: ' + str(comando) )
             print( 'LINE  D: ' + str(salida.stdout) )
 
-        print( 'MANDO: ' + str(salida.stdout) )
+        print( "MANDO: \n" + str(salida.stdout) )
         client.send( salida.stdout.encode() )
 
 window.mainloop()
