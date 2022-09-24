@@ -114,7 +114,7 @@ def receive_message_from_server(sck, m):
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
                     print ( 'OK.')
                     # print( 'LINE  1: ' + str(salida.stdout) )
-                    tkDisplay.insert(tk.END, "\nIN: " + salida.stdout,  "tag_your_message2")
+                    tkDisplay.insert(tk.END, "IN: " + salida.stdout ,  "tag_your_message2")
                 except:
                     salida = 'Error en el des-encriptado.'
                     print ( 'Error.')
@@ -127,7 +127,7 @@ def receive_message_from_server(sck, m):
 
             else:
 # Si no es un mensaje PGP lo presenta como esta
-                tkDisplay.insert(tk.END, "\nIN: " + from_server ,  "tag_your_message2")
+                tkDisplay.insert(tk.END, "IN: " + from_server ,  "tag_your_message2")
 
 
         tkDisplay.config(state=tk.DISABLED)
@@ -146,9 +146,9 @@ def getChatMessage(msg):
     tkDisplay.config(state=tk.NORMAL)
 
     if len(texts) < 1:
-        tkDisplay.insert(tk.END, "\nENTER: " + msg, "tag_your_message") # no line
+        tkDisplay.insert(tk.END, "ENTER: " + msg + "\n", "tag_your_message") # no line
     else:
-        tkDisplay.insert(tk.END, "\nOUT: " + msg, "tag_your_message")
+        tkDisplay.insert(tk.END, "OUT: " + msg + "\n", "tag_your_message")
         # aca invoco al S.O.
 
         send_msg_to_server( msg )
@@ -183,7 +183,7 @@ def send_msg_to_server(msg):
             client.send( salida.stdout.encode() )
         except:
             salida = 'Error en el encriptado.'
-            tkDisplay.insert(tk.END, "\nError en envio." + msg, "tag_your_message2")
+            tkDisplay.insert(tk.END, "Error en envio." + msg + "\n", "tag_your_message2")
             print ( 'Error.')
 
         # validar RETURNCODE, por errores
