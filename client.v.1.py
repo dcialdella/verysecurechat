@@ -12,6 +12,7 @@ window = tk.Tk()
 window.title("Cliente v 1.xxx")
 username = " "
 
+debug_mode = 0 
 
 # Quien Envia los mensajes
 # Tomara el Nombre que definamos al arrancar
@@ -65,6 +66,7 @@ def connect():
         username = entName.get()
         connect_to_server(username)
         userid = username
+        destinoid = username
 # GPG ID usado para descriptar
 
 
@@ -106,10 +108,12 @@ def receive_message_from_server(sck, m):
             if 'PGP MESSAGE' in from_server:
                 comando='echo "' + from_server + '" | gpg -d -u ' + userid + ' 2> /dev/null '
                 salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+
 # capturar error de DECOD
 #                error  = subprocess.error
-#                print( 'LINE  D: ' + str(comando) )
-#                print( 'CODED D: ' + str(salida.stdout) )
+                if debug_mode == 1:
+                    print( 'LINE  D: ' + str(comando) )
+                    print( 'CODED D: ' + str(salida.stdout) )
 
                 tkDisplay.insert(tk.END, "\nIN: " + salida.stdout )
             else:
@@ -163,7 +167,10 @@ def send_msg_to_server(msg):
         salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
 
         # validar RETURNCODE, por errores
-#        print( 'LINE : ' + str(comando) )
+        if debug_mode == 1:
+            print( 'LINE  D: ' + str(comando) )
+            print( 'LINE  D: ' + str(salida.stdout) )
+
         print( 'MANDO: ' + str(salida.stdout) )
         client.send( salida.stdout.encode() )
 
