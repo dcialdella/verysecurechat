@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.9
+# v 1.17
 
 import tkinter as tk
 from tkinter import messagebox
@@ -52,7 +52,7 @@ displayFrame.pack(side=tk.TOP)
 
 
 bottomFrame = tk.Frame(window)
-tkMessage = tk.Text(bottomFrame, height=2, width=55)
+tkMessage = tk.Text(bottomFrame, height=1, width=55)
 tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10))
 tkMessage.config(highlightbackground="grey", state="disabled")
 tkMessage.bind("<Return>", (lambda event: getChatMessage(tkMessage.get("1.0", tk.END))))
@@ -154,6 +154,7 @@ def getChatMessage(msg):
         # aca invoco al S.O.
 
         send_msg_to_server( msg )
+
 
     tkDisplay.config(state=tk.DISABLED)
 
