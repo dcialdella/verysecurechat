@@ -1,16 +1,17 @@
 # SERVER 13031 - 0.0.0.0
-# v 1.6
+# v 1.5
 
 import tkinter as tk
 import socket
 import threading
+import time
 
 window = tk.Tk()
 window.title("Sevidor Central")
 
 # Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
 topFrame = tk.Frame(window)
-btnStart = tk.Button(topFrame, text="Conectado", command=lambda : start_server())
+btnStart = tk.Button(topFrame, text="RESTART", command=lambda : restart_server() )
 btnStart.pack(side=tk.LEFT)
 # btnStop = tk.Button(topFrame, text="Desconectado", command=lambda : stop_server(), state=tk.DISABLED)
 # btnStop.pack(side=tk.LEFT)
@@ -49,7 +50,7 @@ debug_mode = 1
 # Start server function
 def start_server():
     global server, HOST_ADDR, HOST_PORT # code is fine without this
-    btnStart.config(state=tk.DISABLED)
+#    btnStart.config(state=tk.DISABLED)
 #    btnStop.config(state=tk.NORMAL)
 
     try:
@@ -76,6 +77,12 @@ def stop_server():
     btnStart.config(state=tk.NORMAL)
 #    btnStop.config(state=tk.DISABLED)
 
+
+def restart_server():
+    stop_server
+    time.sleep(1)
+    restart_server
+    time.sleep(1)
 
 def accept_clients(the_server, y):
     while True:
@@ -152,6 +159,7 @@ def update_client_names_display(name_list):
     tkDisplay.config(state=tk.DISABLED)
 
 start_server()
+
 window.mainloop()
 
 #
