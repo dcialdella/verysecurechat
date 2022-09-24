@@ -16,10 +16,10 @@ debug_mode = 0
 
 # Quien Envia los mensajes
 # Tomara el Nombre que definamos al arrancar
-userid    = "182DA782"   # ---------------------------------------------
+userid    = "FD58636F"   # ---------------------------------------------
 
 # Para quien seran los mensajes
-destinoid = "182DA782"   # ---------------------------------------------
+destinoid = "FD58636F"   # ---------------------------------------------
 
 
 # network client
