@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.5
+# v 1.9
 
 import tkinter as tk
 from tkinter import messagebox
@@ -15,10 +15,12 @@ username = " "
 debug_mode = 0 
 
 # Quien Envia los mensajes
-# Tomara el Nombre que definamos al arrancar
+# Tomara el Nombre que definamos al arrancar, hacen falta la plave PUBLICA y la PRIVADA
 userid    = "FD58636F"   # ---------------------------------------------
+# En caso de que tengamos la clave PUBLICA, se desencripta igual
 
-# Para quien seran los mensajes
+
+# Para quien seran los mensajes, hace falta SOLO la clave PUBLICA
 destinoid = "FD58636F"   # ---------------------------------------------
 
 
@@ -108,7 +110,16 @@ def receive_message_from_server(sck, m):
 # si es un mensaje PGP trata de desencriptar
             if 'PGP MESSAGE' in from_server:
                 comando='echo "' + from_server + '" | gpg -d -u ' + destinoid + ' 2> /dev/null '
-                salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+
+                try:
+                    salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+                    print ( 'OK.')
+                    # print( 'LINE  1: ' + str(salida.stdout) )
+                except:
+                    salida = 'Error en el des-encriptado.'
+                    print ( 'Error.')
+
+
 
 # capturar error de DECOD
 #                error  = subprocess.error
@@ -165,15 +176,22 @@ def send_msg_to_server(msg):
 
 # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
         comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
-        salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+
+        try:
+            salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+            print ( 'OK.')
+            # print( 'LINE  1: ' + str(salida.stdout) )
+            print( "MANDO: \n" + str(salida.stdout) )
+            client.send( salida.stdout.encode() )
+        except:
+            salida = 'Error en el encriptado.'
+            tkDisplay.insert(tk.END, "\nError en envio." + msg, "tag_your_message2")
+            print ( 'Error.')
 
         # validar RETURNCODE, por errores
         if debug_mode == 1:
             print( 'LINE  D: ' + str(comando) )
             print( 'LINE  D: ' + str(salida.stdout) )
-
-        print( "MANDO: \n" + str(salida.stdout) )
-        client.send( salida.stdout.encode() )
 
 window.mainloop()
  
