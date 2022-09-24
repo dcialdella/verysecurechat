@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.21
+# v 1.25
 
 import tkinter as tk
 from tkinter import messagebox
@@ -15,15 +15,15 @@ username = " "
 debug_mode = 0 
 
 # Quien Envia los mensajes, USARA el NOMBRE DE USUARIO
-# Tomara el Nombre que definamos al arrancar, hacen falta la plave PUBLICA y la PRIVADA
-# En caso de que tengamos la clave PUBLICA, se desencripta igual
-userid = "182DA782"   # ---------------------------------------------
-# userid = "182DA782"
-# userid = "FD58636F"
 
-# Para quien seran los mensajes, hace falta SOLO la clave PUBLICA
-destinoid = ""   # ---------------------------------------------
+# IDENTIFICADOR DEL DESTINATARIO
+GPGuidDestino = "182DA782"   # ---------------------------------------------
 
+# PGP User ID, lo tomara del nombre de usuario.
+emisorpgp = ""   # ---------------------------------------------
+# emisorpgp = "182DA782"
+# emisorpgp = "FD58636F"
+# emisorpgp = "4C189F0A"
 
 # network client
 client = None
@@ -69,8 +69,8 @@ def connect():
     else:
         username = entName.get()
         connect_to_server(username)
-        userid    = username
-        destinoid = username
+        GPGuidDestino    = username
+        emisorpgp = username
 # GPG ID usado para descriptar
 
 
@@ -110,8 +110,8 @@ def receive_message_from_server(sck, m):
         else:
 # si es un mensaje PGP trata de desencriptar
             if 'PGP MESSAGE' in from_server:
-                destinoid = username
-                comando='echo "' + from_server + '" | gpg -d -u ' + destinoid + ' 2> /dev/null '
+                emisorpgp = username
+                comando='echo "' + from_server + '" | gpg -d -u ' + emisorpgp + ' 2> /dev/null '
 
                 try:
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
@@ -175,9 +175,9 @@ def send_msg_to_server(msg):
 #        print( 'Msg: ' + str(msg) )
 #        client.send(client_msg.encode())
 
-        destinoid = username
+        emisorpgp = username
 # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
-        comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
+        comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + ' 2> /dev/null '
 
         try:
             salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
