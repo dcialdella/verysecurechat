@@ -65,7 +65,7 @@ def connect():
     else:
         username = entName.get()
         connect_to_server(username)
-        userid = username
+        userid    = username
         destinoid = username
 # GPG ID usado para descriptar
 
@@ -106,7 +106,7 @@ def receive_message_from_server(sck, m):
         else:
 # si es un mensaje PGP trata de desencriptar
             if 'PGP MESSAGE' in from_server:
-                comando='echo "' + from_server + '" | gpg -d -u ' + userid + ' 2> /dev/null '
+                comando='echo "' + from_server + '" | gpg -d -u ' + destinoid + ' 2> /dev/null '
                 salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
 
 # capturar error de DECOD
@@ -162,8 +162,8 @@ def send_msg_to_server(msg):
 #        print( 'Msg: ' + str(msg) )
 #        client.send(client_msg.encode())
 
-# Armo codigo, Encripto e IMPRIMO en PANTALLA 
-        comando='echo "' + client_msg + '" | gpg -u ' + destinoid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
+# Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
+        comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
         salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
 
         # validar RETURNCODE, por errores
