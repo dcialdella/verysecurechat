@@ -1,5 +1,5 @@
 # SERVER 13031 - 0.0.0.0
-# v 1.0
+# v 1.2
 
 import tkinter as tk
 import socket
@@ -37,8 +37,9 @@ clientFrame.pack(side=tk.BOTTOM, pady=(5, 10))
 
 
 server = None
-HOST_ADDR = "0.0.0.0"
+HOST_ADDR = "cadorcha.no-ip.com"
 HOST_PORT = 13031
+
 client_name = " "
 clients = []
 clients_names = []
