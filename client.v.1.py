@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.4
+# v 1.5
 
 import tkinter as tk
 from tkinter import messagebox
@@ -43,7 +43,8 @@ scrollBar = tk.Scrollbar(displayFrame)
 scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
 tkDisplay = tk.Text(displayFrame, height=30, width=70)
 tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
-tkDisplay.tag_config("tag_your_message", foreground="blue")
+tkDisplay.tag_config("tag_your_message",  foreground="green")
+tkDisplay.tag_config("tag_your_message2", foreground="blue")
 scrollBar.config(command=tkDisplay.yview)
 tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
 displayFrame.pack(side=tk.TOP)
@@ -115,10 +116,10 @@ def receive_message_from_server(sck, m):
                     print( 'LINE  D: ' + str(comando) )
                     print( 'CODED D: ' + str(salida.stdout) )
 
-                tkDisplay.insert(tk.END, "\nIN: " + salida.stdout )
+                tkDisplay.insert(tk.END, "\nIN: " + salida.stdout,  "tag_your_message2")
             else:
 # Si no es un mensaje PGP lo presenta como esta
-                tkDisplay.insert(tk.END, "\nIN: " + from_server )
+                tkDisplay.insert(tk.END, "\nIN: " + from_server ,  "tag_your_message2")
 
 
         tkDisplay.config(state=tk.DISABLED)
