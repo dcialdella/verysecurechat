@@ -16,10 +16,10 @@ debug_mode = 0
 
 # Quien Envia los mensajes, USARA el NOMBRE DE USUARIO
 
-# IDENTIFICADOR DEL DESTINATARIO
+# IDENTIFICADOR DEL DESTINATARIO - GUID acordado entre el GRUPO, hay que tener el PRIVATE ID.
 GPGuidDestino = "182DA782"   # ---------------------------------------------
 
-# PGP User ID, lo tomara del nombre de usuario.
+# PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
 emisorpgp = ""   # ---------------------------------------------
 # emisorpgp = "182DA782"
 # emisorpgp = "FD58636F"
