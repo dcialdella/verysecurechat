@@ -1,5 +1,5 @@
 # SERVER 13031 - 0.0.0.0
-# v 1.10
+# v 1.30
 
 import tkinter as tk
 import socket
@@ -7,7 +7,7 @@ import threading
 import time
 
 window = tk.Tk()
-window.title("Sevidor Central")
+window.title("Sevidor Central v 1.30")
 
 # Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
 topFrame = tk.Frame(window)
