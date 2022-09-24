@@ -13,3 +13,8 @@ Every client will try to de-crypt message, if the message is not for him will be
 
 You need GPG instgalled and Pub/Priv key (you) and PUB keys for others.
 Tested in xUbuntu.
+
+
+Must create GPG pub/priv key
+gpg --full-generate-key
+
