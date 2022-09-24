@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.25
+# v 1.30
 
 import tkinter as tk
 from tkinter import messagebox
@@ -9,7 +9,7 @@ import subprocess
 import os
 
 window = tk.Tk()
-window.title("Cliente v 1.xxx")
+window.title("Cliente v 1.30")
 username = " "
 
 debug_mode = 0 
@@ -54,6 +54,10 @@ displayFrame.pack(side=tk.TOP)
 
 
 bottomFrame = tk.Frame(window)
+
+lblName = tk.Label(bottomFrame, text = "Mensaje:").pack(side=tk.LEFT)
+# entName = tk.Entry(topFrame)
+
 tkMessage = tk.Text(bottomFrame, height=1, width=55)
 tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10))
 tkMessage.config(highlightbackground="grey", state="disabled")
@@ -71,7 +75,6 @@ def connect():
         connect_to_server(username)
         GPGuidDestino    = username
         emisorpgp = username
-# GPG ID usado para descriptar
 
 
 def connect_to_server(name):
@@ -132,7 +135,6 @@ def receive_message_from_server(sck, m):
 # Si no es un mensaje PGP lo presenta como esta
                 tkDisplay.insert(tk.END, "IN: " + from_server ,  "tag_your_message2")
 
-
         tkDisplay.config(state=tk.DISABLED)
         tkDisplay.see(tk.END)
 
@@ -149,13 +151,10 @@ def getChatMessage(msg):
     tkDisplay.config(state=tk.NORMAL)
 
     if len(texts) < 1:
-        tkDisplay.insert(tk.END, "ENTER: " + msg + "\n", "tag_your_message") # no line
+        tkDisplay.insert(tk.END, "ENTER: " + msg + "\n", "tag_your_message")     # no line
     else:
-        tkDisplay.insert(tk.END, "OUT: " + msg + "\n", "tag_your_message")
-        # aca invoco al S.O.
-
+        tkDisplay.insert(tk.END, "OUT: " + msg + "\n", "tag_your_message")       # mostrar texto a enviar
         send_msg_to_server( msg )
-
 
     tkDisplay.config(state=tk.DISABLED)
 
