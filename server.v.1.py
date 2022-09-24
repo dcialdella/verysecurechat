@@ -20,7 +20,7 @@ topFrame.pack(side=tk.TOP, pady=(5, 0))
 middleFrame = tk.Frame(window)
 lblHost = tk.Label(middleFrame, text = "Host: X.X.X.X")
 lblHost.pack(side=tk.LEFT)
-lblPort = tk.Label(middleFrame, text = "Port:XXXX")
+lblPort = tk.Label(middleFrame, text = "Port: XXXX")
 lblPort.pack(side=tk.LEFT)
 middleFrame.pack(side=tk.TOP, pady=(5, 0))
 
@@ -44,6 +44,7 @@ client_name = " "
 clients = []
 clients_names = []
 
+debug_mode = 1
 
 # Start server function
 def start_server():
