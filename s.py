@@ -1,4 +1,5 @@
 # SERVER 13031 - 0.0.0.0
+# v 0.12
 
 import tkinter as tk
 import socket
@@ -22,7 +23,7 @@ lblHost.pack(side=tk.LEFT)
 lblPort = tk.Label(middleFrame, text = "Port:XXXX")
 lblPort.pack(side=tk.LEFT)
 middleFrame.pack(side=tk.TOP, pady=(5, 0))
- 
+
 # The client frame shows the client area
 clientFrame = tk.Frame(window)
 lblLine = tk.Label(clientFrame, text="********** Usuarios Conectados **********").pack()
@@ -109,6 +110,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
 #                server_msg = str(sending_client_name + "->" + client_msg)
                 server_msg = str(client_msg)
                 c.send(server_msg.encode())
+
 
     # find the client index then remove from both lists(client name list and connection list)
     idx = get_client_index(clients, client_connection)
