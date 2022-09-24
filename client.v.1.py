@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.9
+# v 1.12
 
 import tkinter as tk
 from tkinter import messagebox
