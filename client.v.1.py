@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.17
+# v 1.21
 
 import tkinter as tk
 from tkinter import messagebox
@@ -14,13 +14,15 @@ username = " "
 
 debug_mode = 0 
 
-# Quien Envia los mensajes
+# Quien Envia los mensajes, USARA el NOMBRE DE USUARIO
 # Tomara el Nombre que definamos al arrancar, hacen falta la plave PUBLICA y la PRIVADA
-userid    = "FD58636F"   # ---------------------------------------------
 # En caso de que tengamos la clave PUBLICA, se desencripta igual
+userid = "182DA782"   # ---------------------------------------------
+# userid = "182DA782"
+# userid = "FD58636F"
 
 # Para quien seran los mensajes, hace falta SOLO la clave PUBLICA
-destinoid = "FD58636F"   # ---------------------------------------------
+destinoid = ""   # ---------------------------------------------
 
 
 # network client
@@ -30,7 +32,7 @@ HOST_PORT = 13031
 
 
 topFrame = tk.Frame(window)
-lblName = tk.Label(topFrame, text = "Nombre:").pack(side=tk.LEFT)
+lblName = tk.Label(topFrame, text = "GPG U.ID:").pack(side=tk.LEFT)
 entName = tk.Entry(topFrame)
 entName.pack(side=tk.LEFT)
 btnConnect = tk.Button(topFrame, text="Conectar", command=lambda : connect())
@@ -108,6 +110,7 @@ def receive_message_from_server(sck, m):
         else:
 # si es un mensaje PGP trata de desencriptar
             if 'PGP MESSAGE' in from_server:
+                destinoid = username
                 comando='echo "' + from_server + '" | gpg -d -u ' + destinoid + ' 2> /dev/null '
 
                 try:
@@ -172,6 +175,7 @@ def send_msg_to_server(msg):
 #        print( 'Msg: ' + str(msg) )
 #        client.send(client_msg.encode())
 
+        destinoid = username
 # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
         comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
 
