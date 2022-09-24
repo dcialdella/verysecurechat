@@ -1,4 +1,5 @@
 # Client define server ip / port 13031
+# v 0.231
 
 import tkinter as tk
 from tkinter import messagebox
@@ -11,7 +12,8 @@ window = tk.Tk()
 window.title("Cliente")
 username = " "
 
-userid = "182DA782"
+userid    = "182DA782"
+destinoid = "182DA782"
 
 topFrame = tk.Frame(window)
 lblName = tk.Label(topFrame, text = "Nombre:").pack(side=tk.LEFT)
@@ -90,22 +92,17 @@ def receive_message_from_server(sck, m):
         if len(texts) < 1:
             tkDisplay.insert(tk.END, from_server)
         else:
-            comando='echo "' + from_server + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
-            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
-#            print(p.stdout )
+#            print ( "\n\n" + from_server )
 
 #            comando='echo ' + from_server + ' | gpg -d -u ' + userid 
 #            p2 = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
 
 #            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
-            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p.stdout )
-#            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p2.stdout )
-#            tkDisplay.insert(tk.END, "\n" + cp ) 
-#            tkDisplay.insert(tk.END, "\n" + pp ) 
+            tkDisplay.insert(tk.END, "\nIN: " + from_server )
 
-#            print(p.communicate())
-# aca enviar el texto a SHELL, desencriptar
-# y mostrar en pantalla
+# ACA revisar si el texto tiene PGP y tratar de des-encriptar
+#            tkDisplay.insert(tk.END, "\n\n" + from_server + "\n" + p2.stdout )
+
 
         tkDisplay.config(state=tk.DISABLED)
         tkDisplay.see(tk.END)
@@ -118,42 +115,57 @@ def receive_message_from_server(sck, m):
 
 def getChatMessage(msg):
 
+    # controlar mensaje vacio, no imprimir nada.
+
     msg = msg.replace('\n', '')
     texts = tkDisplay.get("1.0", tk.END).strip()
 
     # enable the display area and insert the text and then disable.
     # why? Apparently, tkinter does not allow use insert into a disabled Text widget :(
     tkDisplay.config(state=tk.NORMAL)
+
     if len(texts) < 1:
         tkDisplay.insert(tk.END, "ENTER->" + msg, "tag_your_message") # no line
     else:
-        tkDisplay.insert(tk.END, "\n" + "Tu->" + msg, "tag_your_message")
+        tkDisplay.insert(tk.END, "\n" + "OUT: " + msg, "tag_your_message")
         # aca invoco al S.O.
 
+        send_msg_to_server( msg )
 
     tkDisplay.config(state=tk.DISABLED)
-
-
-    send_msg_to_server(msg)
 
     tkDisplay.see(tk.END)
     tkMessage.delete('1.0', tk.END)
 
 
 def send_msg_to_server(msg):
+
     client_msg = str(msg)
 
-#    msg = msg.replace('\n', '')
-
-    print( client_msg )
-    client.send(client_msg.encode())
-
-# Encriptar el mensaje para el cliente destino que queremos
-
-    if msg == "exit":
+    if client_msg == "fin":
         client.close()
         window.destroy()
-    print("Enviando")
+
+    if len(client_msg) >0:
+
+# Mando mensaje EN PLANO
+        print( '----------------------------' )
+        print( 'Msg: ' + str(msg) )
+        client.send(client_msg.encode())
+
+# Armo codugo, Encripto e IMPRIMO en PANTALLA 
+        comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null > /tmp/log.txt'
+        salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+        print( 'LINE : ' + str(comando) )
+        print( 'CODED: ' + str(salida) )
+
+        comando='cat /tmp/log.txt'
+        salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+        print( 'LINE : ' + str(comando) )
+        print( 'CODED: ' + str(salida) )
+
+# Mando mensaje al servidor
+#        client.send( salida )
 
 window.mainloop()
  
@@ -167,11 +179,10 @@ window.mainloop()
 #            print(p.stdout )
 #            tkDisplay.insert(tk.END, "\n" + p.stdout )
 
-#            comando='echo ' + '1234' + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+#            comando='echo ' + '1234' + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid
 #            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
-#             msg2 = 'echo ' + client_msg + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+#             msg2 = 'echo ' + client_msg + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid
 
-
-#            comando='echo ' + from_server + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r 182DA782'
+#            comando='echo ' + from_server + '| gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid
 #            p = subprocess.run(comando, shell=True, timeout=2, check=True, capture_output=True, text=True)
 
