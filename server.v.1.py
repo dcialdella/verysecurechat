@@ -1,5 +1,5 @@
 # SERVER 13031 - 0.0.0.0
-# v 1.5
+# v 1.6
 
 import tkinter as tk
 import socket
@@ -12,8 +12,8 @@ window.title("Sevidor Central")
 topFrame = tk.Frame(window)
 btnStart = tk.Button(topFrame, text="Conectado", command=lambda : start_server())
 btnStart.pack(side=tk.LEFT)
-btnStop = tk.Button(topFrame, text="Desconectado", command=lambda : stop_server(), state=tk.DISABLED)
-btnStop.pack(side=tk.LEFT)
+# btnStop = tk.Button(topFrame, text="Desconectado", command=lambda : stop_server(), state=tk.DISABLED)
+# btnStop.pack(side=tk.LEFT)
 topFrame.pack(side=tk.TOP, pady=(5, 0))
 
 # Middle frame consisting of two labels for displaying the host and port info
@@ -50,27 +50,31 @@ debug_mode = 1
 def start_server():
     global server, HOST_ADDR, HOST_PORT # code is fine without this
     btnStart.config(state=tk.DISABLED)
-    btnStop.config(state=tk.NORMAL)
+#    btnStop.config(state=tk.NORMAL)
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print( 'Arrancando el servidor.')
-    print(socket.AF_INET)
-    print(socket.SOCK_STREAM)
+    try:
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print( 'Arrancando el servidor.')
+        print(socket.AF_INET)
+        print(socket.SOCK_STREAM)
 
-    server.bind((HOST_ADDR, HOST_PORT))
-    server.listen(5)  # server is listening for client connection
+        server.bind((HOST_ADDR, HOST_PORT))
+        server.listen(5)  # server is listening for client connection
 
-    threading._start_new_thread(accept_clients, (server, " "))
+        threading._start_new_thread(accept_clients, (server, " "))
 
-    lblHost["text"] = "Host: " + HOST_ADDR
-    lblPort["text"] = "Port: " + str(HOST_PORT)
+        lblHost["text"] = "Host: " + HOST_ADDR
+        lblPort["text"] = "Port: " + str(HOST_PORT)
+    except:
+        print( 'ERROR Arrancando el servidor, reintente en 30 segs.')
+        quit()
 
 
 # Stop server function
 def stop_server():
     global server
     btnStart.config(state=tk.NORMAL)
-    btnStop.config(state=tk.DISABLED)
+#    btnStop.config(state=tk.DISABLED)
 
 
 def accept_clients(the_server, y):
