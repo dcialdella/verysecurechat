@@ -1,6 +1,7 @@
 # VerySecureChat
 Very Secure Chat using GPG as encription system
 v0.0.1 - GPL v2.0
+Linux Only (NOW)
 
 Server runs and accept clients.
 
