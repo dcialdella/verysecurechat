@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.12
+# v 1.9
 
 import tkinter as tk
 from tkinter import messagebox
@@ -18,7 +18,6 @@ debug_mode = 0
 # Tomara el Nombre que definamos al arrancar, hacen falta la plave PUBLICA y la PRIVADA
 userid    = "FD58636F"   # ---------------------------------------------
 # En caso de que tengamos la clave PUBLICA, se desencripta igual
-
 
 # Para quien seran los mensajes, hace falta SOLO la clave PUBLICA
 destinoid = "FD58636F"   # ---------------------------------------------
@@ -89,7 +88,7 @@ def connect_to_server(name):
         threading._start_new_thread(receive_message_from_server, (client, "m"))
     except Exception as e:
         tk.messagebox.showerror(title="ERROR!!!", message="No hay conexiones al server: " + HOST_ADDR + " en puerto: " + str(HOST_PORT) + " el Servidor puede estar apagado.")
-
+        quit()
 
 def receive_message_from_server(sck, m):
     while True:
