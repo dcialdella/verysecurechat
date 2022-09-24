@@ -114,11 +114,10 @@ def receive_message_from_server(sck, m):
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
                     print ( 'OK.')
                     # print( 'LINE  1: ' + str(salida.stdout) )
+                    tkDisplay.insert(tk.END, "\nIN: " + salida.stdout,  "tag_your_message2")
                 except:
                     salida = 'Error en el des-encriptado.'
                     print ( 'Error.')
-
-
 
 # capturar error de DECOD
 #                error  = subprocess.error
@@ -126,7 +125,6 @@ def receive_message_from_server(sck, m):
                     print( 'LINE  D: ' + str(comando) )
                     print( 'CODED D: ' + str(salida.stdout) )
 
-                tkDisplay.insert(tk.END, "\nIN: " + salida.stdout,  "tag_your_message2")
             else:
 # Si no es un mensaje PGP lo presenta como esta
                 tkDisplay.insert(tk.END, "\nIN: " + from_server ,  "tag_your_message2")
