@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.0
+# v 1.2
 
 import tkinter as tk
 from tkinter import messagebox
@@ -9,11 +9,23 @@ import subprocess
 import os
 
 window = tk.Tk()
-window.title("Cliente")
+window.title("Cliente v 1.xxx")
 username = " "
 
-userid    = "182DA782"
-destinoid = "182DA782"
+
+# Quien Envia los mensajes
+# Tomara el Nombre que definamos al arrancar
+userid    = "182DA782"   # ---------------------------------------------
+
+# Para quien seran los mensajes
+destinoid = "182DA782"   # ---------------------------------------------
+
+
+# network client
+client = None
+HOST_ADDR = "cadorcha.no-ip.com"
+HOST_PORT = 13031
+
 
 topFrame = tk.Frame(window)
 lblName = tk.Label(topFrame, text = "Nombre:").pack(side=tk.LEFT)
@@ -46,17 +58,15 @@ bottomFrame.pack(side=tk.BOTTOM)
 
 def connect():
     global username, client
+
     if len(entName.get()) < 1:
         tk.messagebox.showerror(title="ERROR!!!", message="Debes indicar tu ID de GPG <ej. 182D2121>")
     else:
         username = entName.get()
         connect_to_server(username)
+        userid = username
+# GPG ID usado para descriptar
 
-
-# network client
-client = None
-HOST_ADDR = "0.0.0.0"
-HOST_PORT = 13031
 
 def connect_to_server(name):
     global client, HOST_PORT, HOST_ADDR
@@ -92,33 +102,29 @@ def receive_message_from_server(sck, m):
         if len(texts) < 1:
             tkDisplay.insert(tk.END, from_server)
         else:
-# si es PGP trata de desencriptar
+# si es un mensaje PGP trata de desencriptar
             if 'PGP MESSAGE' in from_server:
                 comando='echo "' + from_server + '" | gpg -d -u ' + userid + ' 2> /dev/null '
                 salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
+# capturar error de DECOD
 #                error  = subprocess.error
-
 #                print( 'LINE  D: ' + str(comando) )
 #                print( 'CODED D: ' + str(salida.stdout) )
 
                 tkDisplay.insert(tk.END, "\nIN: " + salida.stdout )
             else:
+# Si no es un mensaje PGP lo presenta como esta
                 tkDisplay.insert(tk.END, "\nIN: " + from_server )
 
 
         tkDisplay.config(state=tk.DISABLED)
         tkDisplay.see(tk.END)
 
-        # print("Server says: " +from_server)
-
     sck.close()
     window.destroy()
 
 
 def getChatMessage(msg):
-
-    # controlar mensaje vacio, no imprimir nada.
-
     msg = msg.replace('\n', '')
     texts = tkDisplay.get("1.0", tk.END).strip()
 
@@ -141,7 +147,6 @@ def getChatMessage(msg):
 
 
 def send_msg_to_server(msg):
-
     client_msg = str(msg)
 
     if client_msg == "fin":
@@ -149,30 +154,18 @@ def send_msg_to_server(msg):
         window.destroy()
 
     if len(client_msg) >0:
-
-# Mando mensaje EN PLANO
-        print( '----------------------------' )
 # Des-comentar para ver mensaje en claro
 #        print( 'Msg: ' + str(msg) )
 #        client.send(client_msg.encode())
 
-# Armo codugo, Encripto e IMPRIMO en PANTALLA 
-        comando='echo "' + client_msg + '" | gpg -u ' + userid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
+# Armo codigo, Encripto e IMPRIMO en PANTALLA 
+        comando='echo "' + client_msg + '" | gpg -u ' + destinoid + ' -e -a --no-comment --no-verbose -r ' + destinoid + ' 2> /dev/null '
         salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
 
         # validar RETURNCODE, por errores
 #        print( 'LINE : ' + str(comando) )
-        print( 'CODED: ' + str(salida.stdout) )
+        print( 'MANDO: ' + str(salida.stdout) )
         client.send( salida.stdout.encode() )
-
-#        comando='cat /tmp/log.txt'
-#        salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
-#        print( 'LINE : ' + str(comando) )
-#        print( 'CODED: ' + str(salida) )
-
-
-# Mando mensaje al servidor
-#        client.send( salida )
 
 window.mainloop()
  
