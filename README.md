@@ -23,10 +23,11 @@ https://gpg4win.org/download.html
 https://gpgtools.org/
 
 ***Must create GPG pub/priv key***
+```
 gpg --full-generate-key
-
 gpg –list-secret-keys
 gpg –list-public-keys
+```
 
 
 ## Donations
