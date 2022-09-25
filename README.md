@@ -1,7 +1,6 @@
-# VerySecureChat
+# VerySecureChat v1.30 - GPL v2.0
 ## Very Secure Chat using GPG as encryption system
-## v1.30 - GPL v2.0
-## Linux Tested - OSX Tested - Windows (on test process)
+### Linux Tested - OSX Tested - Windows (on test process)
 
 Server runs on port 13031 - hostname defined in SERVER Python code
 Clients runs and connect to SERVER name, port 13031.
