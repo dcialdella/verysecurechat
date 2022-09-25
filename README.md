@@ -15,15 +15,15 @@ Every client will try to de-crypt message, if the message is not PGP, will be sh
 You need GPG instgalled and Pub/Priv key (you) and PUB keys for others.
 You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
 
-Tested in xUbuntu.
+Tested in ***xUbuntu.***
 
-For WINDOWS
+***For WINDOWS***
 https://gpg4win.org/download.html
 
-For OSX
+***For OSX***
 https://gpgtools.org/
 
-Must create GPG pub/priv key
+***Must create GPG pub/priv key***
 gpg --full-generate-key
 
 gpg –list-secret-keys
