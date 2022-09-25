@@ -28,3 +28,10 @@ gpg --full-generate-key
 
 gpg –list-secret-keys
 gpg –list-public-keys
+
+
+Donations
+Bitcoin  3QeNvmaD7bdbaVqidbwZWE27LTDcJWBpYi
+Monero   4GdoN7NCTi8a5gZug7PrwZNKjvHFmKeV11L6pNJPgj5QNEHsN6eeX3DaAQFwZ1ufD4LYCZKArktt113W7QjWvQ7CW9WdUe986hCBQ4nivK
+LiteCoin LTmsrrWrb5pA77z1zm2fA1hDiuJYrf8gAW
+BANK ACC ES24 1465 0100 99 1700405811
