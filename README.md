@@ -3,15 +3,18 @@ Very Secure Chat using GPG as encription system
 v0.0.1 - GPL v2.0
 Linux Only (NOW)
 
-Server runs and accept clients.
+Server runs on port 13031 - hostname defined in SERVER Python code
+Clients runs and connect to SERVER name, port 13031.
 
-Clientes connect to server, and send message to server, server deliver it to all clientes.
+Clientes connect to server, and send PGP message to server, server deliver it to all clientes.
 
-Every client will encript message before send it.
+Every client will encript message before send it. Encrypt END-END
 
-Every client will try to de-crypt message, if the message is not for him will be discarted.
+Every client will try to de-crypt message, if the message is not PGP, will be show as it.
 
 You need GPG instgalled and Pub/Priv key (you) and PUB keys for others.
+You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
+
 Tested in xUbuntu.
 
 For WINDOWS
