@@ -7,6 +7,8 @@ import socket
 import threading
 import subprocess
 import os
+import datetime
+
 
 window = tk.Tk()
 window.title("Cliente v 1.30")
@@ -112,28 +114,30 @@ def receive_message_from_server(sck, m):
             tkDisplay.insert(tk.END, from_server)
         else:
 # si es un mensaje PGP trata de desencriptar
+            cuando = datetime.datetime.now()
+
             if 'PGP MESSAGE' in from_server:
                 emisorpgp = username
                 comando='echo "' + from_server + '" | gpg -d -u ' + emisorpgp + ' 2> /dev/null '
 
                 try:
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
-                    print ( 'OK.')
+                    print ( "OK - " + str(cuando) )
                     # print( 'LINE  1: ' + str(salida.stdout) )
-                    tkDisplay.insert(tk.END, "IN: " + salida.stdout ,  "tag_your_message2")
+                    tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + salida.stdout ,  "tag_your_message2")
                 except:
                     salida = 'Error en el des-encriptado.'
-                    print ( 'Error.')
+                    print ( 'Error -' + str(cuando) )
 
 # capturar error de DECOD
 #                error  = subprocess.error
                 if debug_mode == 1:
-                    print( 'LINE  D: ' + str(comando) )
-                    print( 'CODED D: ' + str(salida.stdout) )
+                    print( 'LINE  D: ' + str(comando) + '\n')
+                    print( 'CODED D: ' + str(salida.stdout) + '\n')
 
             else:
 # Si no es un mensaje PGP lo presenta como esta
-                tkDisplay.insert(tk.END, "IN: " + from_server ,  "tag_your_message2")
+                tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + from_server ,  "tag_your_message2")
 
         tkDisplay.config(state=tk.DISABLED)
         tkDisplay.see(tk.END)
@@ -150,10 +154,12 @@ def getChatMessage(msg):
     # why? Apparently, tkinter does not allow use insert into a disabled Text widget :(
     tkDisplay.config(state=tk.NORMAL)
 
+    cuando = datetime.datetime.now()
+
     if len(texts) < 1:
-        tkDisplay.insert(tk.END, "ENTER: " + msg + "\n", "tag_your_message")     # no line
+        tkDisplay.insert(tk.END, "ENTER: " + str(cuando) + ' - ' + msg + "\n", "tag_your_message")     # no line
     else:
-        tkDisplay.insert(tk.END, "OUT: " + msg + "\n", "tag_your_message")       # mostrar texto a enviar
+        tkDisplay.insert(tk.END, "OUT-" + str(cuando) + ' - ' + msg + "\n", "tag_your_message")       # mostrar texto a enviar
         send_msg_to_server( msg )
 
     tkDisplay.config(state=tk.DISABLED)
@@ -178,21 +184,23 @@ def send_msg_to_server(msg):
 # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
         comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + ' 2> /dev/null '
 
+        cuando = datetime.datetime.now()
+
         try:
             salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
-            print ( 'OK.')
+            # print ( 'OK.')
             # print( 'LINE  1: ' + str(salida.stdout) )
-            print( "MANDO: \n" + str(salida.stdout) )
+            print( "MANDO:\n" + str(cuando) + '\n' + str(salida.stdout) + "\n")
             client.send( salida.stdout.encode() )
         except:
             salida = 'Error en el encriptado.'
-            tkDisplay.insert(tk.END, "Error en envio." + msg + "\n", "tag_your_message2")
+            tkDisplay.insert(tk.END, "Error en envio." + str(cuando) + ' - ' + msg + "\n", "tag_your_message2")
             print ( 'Error.')
 
         # validar RETURNCODE, por errores
         if debug_mode == 1:
-            print( 'LINE  D: ' + str(comando) )
-            print( 'LINE  D: ' + str(salida.stdout) )
+            print( 'LINE  D: ' + str(comando) + "\n")
+            print( 'LINE  D: ' + str(salida.stdout) + "\n")
 
 window.mainloop()
  
