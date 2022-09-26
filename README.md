@@ -18,6 +18,7 @@ You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
 
 ***For WINDOWS***
 https://gpg4win.org/download.html
+SOME ISSUES with PGP / NEW LINE / others
 
 ***For OSX***
 https://gpgtools.org/
