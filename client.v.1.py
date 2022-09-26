@@ -1,6 +1,13 @@
 # Client define server ip / port 13031
-# v 1.30
+# v 1.31
+# Fix for Windows O.S. thanks ZeroCool22 for Debugging.
 
+# import gnupg
+# gpg = gnupg.GPG(gnupghome='/usr/bin')
+# encrypted_ascii_data = gpg.encrypt(data, recipients)
+# decrypted_data = gpg.decrypt(data)
+
+from sys import platform
 import tkinter as tk
 from tkinter import messagebox
 import socket
@@ -22,7 +29,7 @@ debug_mode = 0
 GPGuidDestino = "182DA782"   # ---------------------------------------------
 
 # PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
-emisorpgp = ""   # ---------------------------------------------
+emisorpgp = "FD58636F"   # ---------------------------------------------
 # emisorpgp = "182DA782"
 # emisorpgp = "FD58636F"
 # emisorpgp = "4C189F0A"
@@ -31,6 +38,17 @@ emisorpgp = ""   # ---------------------------------------------
 client = None
 HOST_ADDR = "cadorcha.no-ip.com"
 HOST_PORT = 13031
+
+sisope=''
+if platform == "linux" or platform == "linux2":
+    # linux
+    sisope=' 2> /dev/null'
+elif platform == "darwin":
+    # OS X
+    sisope=' 2> /dev/null'
+elif platform == "win32":
+    # Windows...
+    sisope=' 2>NUL'
 
 
 topFrame = tk.Frame(window)
@@ -118,7 +136,7 @@ def receive_message_from_server(sck, m):
 
             if 'PGP MESSAGE' in from_server:
                 emisorpgp = username
-                comando='echo "' + from_server + '" | gpg -d -u ' + emisorpgp + ' 2> /dev/null '
+                comando='echo "' + from_server + '" | gpg -d -u ' + emisorpgp + sisope
 
                 try:
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
@@ -182,7 +200,7 @@ def send_msg_to_server(msg):
 
         emisorpgp = username
 # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
-        comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + ' 2> /dev/null '
+        comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + sisope
 
         cuando = datetime.datetime.now()
 
