@@ -13,9 +13,14 @@ from tkinter import messagebox
 import socket
 import threading
 import subprocess
-import os
+# import os
 import datetime
 
+import json
+
+#read config file
+configFile = open ('client_config.json', "r")
+config = json.load(configFile)
 
 window = tk.Tk()
 window.title("Cliente v 1.30")
@@ -26,7 +31,8 @@ debug_mode = 0
 # Quien Envia los mensajes, USARA el NOMBRE DE USUARIO
 
 # IDENTIFICADOR DEL DESTINATARIO - GUID acordado entre el GRUPO, hay que tener el PRIVATE ID.
-GPGuidDestino = "182DA782"   # ---------------------------------------------
+# GPGuidDestino = "182DA782"   # ---------------------------------------------
+GPGuidDestino = config['GPGid']
 
 # PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
 emisorpgp = "FD58636F"   # ---------------------------------------------
@@ -36,8 +42,8 @@ emisorpgp = "FD58636F"   # ---------------------------------------------
 
 # network client
 client = None
-HOST_ADDR = "cadorcha.no-ip.com"
-HOST_PORT = 13031
+HOST_ADDR = config['server']
+HOST_PORT = config['port']
 
 sisope=''
 if platform == "linux" or platform == "linux2":
@@ -53,8 +59,10 @@ elif platform == "win32":
 
 topFrame = tk.Frame(window)
 lblName = tk.Label(topFrame, text = "GPG U.ID:").pack(side=tk.LEFT)
-entName = tk.Entry(topFrame)
+entNameText = tk.StringVar()
+entName = tk.Entry(topFrame, textvariable=entNameText)
 entName.pack(side=tk.LEFT)
+entNameText.set(GPGuidDestino)
 btnConnect = tk.Button(topFrame, text="Conectar", command=lambda : connect())
 btnConnect.pack(side=tk.LEFT)
 #btnConnect.bind('<Button-1>', connect)
@@ -64,7 +72,7 @@ displayFrame = tk.Frame(window)
 lblLine = tk.Label(displayFrame, text="*********************************************************************").pack()
 scrollBar = tk.Scrollbar(displayFrame)
 scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
-tkDisplay = tk.Text(displayFrame, height=30, width=70)
+tkDisplay = tk.Text(displayFrame, height=30, width=70, fg="black")
 tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
 tkDisplay.tag_config("tag_your_message",  foreground="green")
 tkDisplay.tag_config("tag_your_message2", foreground="blue")
@@ -107,6 +115,7 @@ def connect_to_server(name):
         entName.config(state=tk.DISABLED)
         btnConnect.config(state=tk.DISABLED)
         tkMessage.config(state=tk.NORMAL)
+        tkMessage.focus_set()
 
         # start a thread to keep receiving message from server
         # do not block the main thread :)
@@ -131,7 +140,7 @@ def receive_message_from_server(sck, m):
         if len(texts) < 1:
             tkDisplay.insert(tk.END, from_server)
         else:
-# si es un mensaje PGP trata de desencriptar
+            # si es un mensaje PGP trata de desencriptar
             cuando = datetime.datetime.now()
 
             if 'PGP MESSAGE' in from_server:
@@ -154,7 +163,7 @@ def receive_message_from_server(sck, m):
                     print( 'CODED D: ' + str(salida.stdout) + '\n')
 
             else:
-# Si no es un mensaje PGP lo presenta como esta
+                # Si no es un mensaje PGP lo presenta como esta
                 tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + from_server ,  "tag_your_message2")
 
         tkDisplay.config(state=tk.DISABLED)
@@ -190,8 +199,10 @@ def send_msg_to_server(msg):
     client_msg = str(msg)
 
     if client_msg == "fin":
-        client.close()
+        # no hace falta cerrar el cliente si usamos quit()
+        # client.close()
         window.destroy()
+        quit()
 
     if len(client_msg) >0:
 # Des-comentar para ver mensaje en claro

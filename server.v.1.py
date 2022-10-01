@@ -5,41 +5,47 @@ import tkinter as tk
 import socket
 import threading
 import time
+import json
 
-window = tk.Tk()
-window.title("Sevidor Central v 1.30")
+#read config file
+configFile = open ('server_config.json', "r")
+config = json.load(configFile)
 
-# Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
-topFrame = tk.Frame(window)
-btnStart = tk.Button(topFrame, text="RESTART", command=lambda : restart_server() )
-btnStart.pack(side=tk.LEFT)
-# btnStop = tk.Button(topFrame, text="Desconectado", command=lambda : stop_server(), state=tk.DISABLED)
-# btnStop.pack(side=tk.LEFT)
-topFrame.pack(side=tk.TOP, pady=(5, 0))
+if (config['gui']):
+    window = tk.Tk()
+    window.title("Sevidor Central v 1.30")
 
-# Middle frame consisting of two labels for displaying the host and port info
-middleFrame = tk.Frame(window)
-lblHost = tk.Label(middleFrame, text = "Host: X.X.X.X")
-lblHost.pack(side=tk.LEFT)
-lblPort = tk.Label(middleFrame, text = "Port: XXXX")
-lblPort.pack(side=tk.LEFT)
-middleFrame.pack(side=tk.TOP, pady=(5, 0))
+    # Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
+    topFrame = tk.Frame(window)
+    btnStart = tk.Button(topFrame, text="RESTART", command=lambda : restart_server() )
+    btnStart.pack(side=tk.LEFT)
+    # btnStop = tk.Button(topFrame, text="Desconectado", command=lambda : stop_server(), state=tk.DISABLED)
+    # btnStop.pack(side=tk.LEFT)
+    topFrame.pack(side=tk.TOP, pady=(5, 0))
 
-# The client frame shows the client area
-clientFrame = tk.Frame(window)
-lblLine = tk.Label(clientFrame, text="********** Usuarios Conectados **********").pack()
-scrollBar = tk.Scrollbar(clientFrame)
-scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
-tkDisplay = tk.Text(clientFrame, height=15, width=30)
-tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
-scrollBar.config(command=tkDisplay.yview)
-tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
-clientFrame.pack(side=tk.BOTTOM, pady=(5, 10))
+    # Middle frame consisting of two labels for displaying the host and port info
+    middleFrame = tk.Frame(window)
+    lblHost = tk.Label(middleFrame, text = "Host: X.X.X.X")
+    lblHost.pack(side=tk.LEFT)
+    lblPort = tk.Label(middleFrame, text = "Port: XXXX")
+    lblPort.pack(side=tk.LEFT)
+    middleFrame.pack(side=tk.TOP, pady=(5, 0))
+
+    # The client frame shows the client area
+    clientFrame = tk.Frame(window)
+    lblLine = tk.Label(clientFrame, text="********** Usuarios Conectados **********").pack()
+    scrollBar = tk.Scrollbar(clientFrame)
+    scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
+    tkDisplay = tk.Text(clientFrame, height=15, width=30, fg="black")
+    tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
+    scrollBar.config(command=tkDisplay.yview)
+    tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
+    clientFrame.pack(side=tk.BOTTOM, pady=(5, 10))
 
 
 server = None
-HOST_ADDR = "cadorcha.no-ip.com"
-HOST_PORT = 13031
+HOST_ADDR = config['address']
+HOST_PORT = config['port']
 
 client_name = " "
 clients = []
@@ -63,9 +69,9 @@ def start_server():
         server.listen(5)  # server is listening for client connection
 
         threading._start_new_thread(accept_clients, (server, " "))
-
-        lblHost["text"] = "Host: " + HOST_ADDR
-        lblPort["text"] = "Port: " + str(HOST_PORT)
+        if (config['gui']):
+            lblHost["text"] = "Host: " + HOST_ADDR
+            lblPort["text"] = "Port: " + str(HOST_PORT)
     except:
         print( 'ERROR Arrancando el servidor, reintente en 30 segs.')
         quit()
@@ -76,7 +82,6 @@ def stop_server():
     global server
     btnStart.config(state=tk.NORMAL)
 #    btnStop.config(state=tk.DISABLED)
-
 
 def restart_server():
     stop_server
@@ -107,7 +112,6 @@ def send_receive_client_message(client_connection, client_ip_addr):
     clients_names.append(client_name)
 
     update_client_names_display(clients_names)  # update client names display
-
 
     while True:
         data = client_connection.recv(4096).decode()
@@ -151,17 +155,24 @@ def get_client_index(client_list, curr_client):
 # Update client name display when a new client connects OR
 # When a connected client disconnects
 def update_client_names_display(name_list):
-    tkDisplay.config(state=tk.NORMAL)
-    tkDisplay.delete('1.0', tk.END)
+    if (config['gui']):
+        tkDisplay.config(state=tk.NORMAL)
+        tkDisplay.delete('1.0', tk.END)
 
-    for c in name_list:
-        tkDisplay.insert(tk.END, c+"\n")
-    tkDisplay.config(state=tk.DISABLED)
+        for c in name_list:
+            tkDisplay.insert(tk.END, c+"\n")
+        tkDisplay.config(state=tk.DISABLED)
 
 start_server()
 
-window.mainloop()
-
+if (config['gui']):
+    window.mainloop()
+else:
+    try:
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        pass
 #
 # EOF
 #
