@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.31
+# v 1.31 - minor changes
 # Fix for Windows O.S. thanks ZeroCool22 for Debugging.
 
 # import gnupg
