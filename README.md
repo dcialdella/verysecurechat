@@ -23,6 +23,8 @@ SOME ISSUES with PGP / NEW LINE / others
 ***For OSX***
 https://gpgtools.org/
 
+brew install python-tk
+
 ***Must create GPG pub/priv key***
 ```
 gpg --full-generate-key
