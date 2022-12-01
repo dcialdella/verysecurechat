@@ -7,7 +7,7 @@
 # encrypted_ascii_data = gpg.encrypt(data, recipients)
 # decrypted_data = gpg.decrypt(data)
 
-from sys import platform
+from sys import platform 
 import tkinter as tk
 from tkinter import messagebox
 import socket
