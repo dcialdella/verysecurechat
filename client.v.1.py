@@ -8,7 +8,7 @@
 # decrypted_data = gpg.decrypt(data)
 
 from sys import platform 
-import tkinter as tk
+import tkinter as tk 
 from tkinter import messagebox
 import socket
 import threading

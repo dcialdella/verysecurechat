@@ -6,7 +6,7 @@ import tkinter as tk
 import socket
 import threading
 import time
-import json
+import json 
 
 #read config file
 configFile = open ('server_config.json', "r")
