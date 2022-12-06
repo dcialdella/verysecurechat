@@ -56,3 +56,5 @@ LiteCoin LTmsrrWrb5pA77z1zm2fA1hDiuJYrf8gAW
 BANK ACCOUNT LT32 3250 0803 5132 5244
 BIC REVOLT21
 ```
+
+![alt text]([http://url/to/](https://github.com/dcialdella/verysecurechat/image.png)
