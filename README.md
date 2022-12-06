@@ -35,6 +35,12 @@ gpg –list-public-keys
 ```
 
 
+How test it 
+Linux.
+-- python3 client.v.1.py
+
+
+
 ## Donations
 ```
 Bitcoin  3QeNvmaD7bdbaVqidbwZWE27LTDcJWBpYi
