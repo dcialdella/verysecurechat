@@ -110,9 +110,12 @@ def send_receive_client_message(client_connection, client_ip_addr):
     client_msg = " "
 
     # send welcome message to client
-    client_name  = client_connection.recv(4096).decode()
-    welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars.\n\n"
-    client_connection.send(welcome_msg.encode())
+    try:
+        client_name  = client_connection.recv(4096).decode()
+        welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars.\n\n"
+        client_connection.send(welcome_msg.encode())
+    except:
+        data = ""
 
     clients_names.append(client_name)
 
@@ -153,7 +156,6 @@ def send_receive_client_message(client_connection, client_ip_addr):
     client_connection.close()
 
     update_client_names_display(clients_names)  # update client names display
-
 
 # Return the index of the current client in the list of clients
 def get_client_index(client_list, curr_client):
