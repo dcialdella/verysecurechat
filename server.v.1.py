@@ -1,20 +1,37 @@
 # SERVER 13031 - 0.0.0.0
 # minor changes applied
-# v 1.30
+# v 1.40
 
-import tkinter as tk
+# import tkinter as tk  NOT NEEDED if no GUI
 import socket
 import threading
 import time
 import json 
 
-#read config file
-configFile = open ('server_config.json', "r")
-config = json.load(configFile)
+# open file and use it as parameters.
+config = json.load( open ('server_config.json', "r")  ) 
+
+HOST_ADDR  = config['address']
+HOST_PORT  = config['port']
+DEBUG_MODE = config['debug']
+
+if config['address'] == '':
+   HOST_ADDR = '127.0.0.1'
+
+if config['port'] == '':
+   PORT = '13031'
+
+client_name = " "
+clients = []
+clients_names = []
 
 if (config['gui']):
+
+    # Load library ONLY if needed by GUI interface
+    import tkinter as tk
+
     window = tk.Tk()
-    window.title("Sevidor Central v 1.30")
+    window.title("Sevidor Central v 1.40")
 
     # Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
     topFrame = tk.Frame(window)
@@ -44,21 +61,8 @@ if (config['gui']):
     clientFrame.pack(side=tk.BOTTOM, pady=(5, 10))
 
 
-server = None
-HOST_ADDR = config['address']
-HOST_PORT = config['port']
-
-client_name = " "
-clients = []
-clients_names = []
-
-debug_mode = 1
-
 # Start server function
 def start_server():
-    global server, HOST_ADDR, HOST_PORT # code is fine without this
-#    btnStart.config(state=tk.DISABLED)
-#    btnStop.config(state=tk.NORMAL)
 
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -129,6 +133,8 @@ def send_receive_client_message(client_connection, client_ip_addr):
 #                server_msg = str(sending_client_name + "->" + client_msg)
                 server_msg = str(client_msg)
                 c.send(server_msg.encode())
+                if ( DEBUG_MODE ) :
+                    print ( server_msg )
 
 
     # find the client index then remove from both lists(client name list and connection list)
@@ -151,7 +157,6 @@ def get_client_index(client_list, curr_client):
         idx = idx + 1
 
     return idx
-
 
 # Update client name display when a new client connects OR
 # When a connected client disconnects
@@ -177,3 +182,4 @@ else:
 #
 # EOF
 #
+
