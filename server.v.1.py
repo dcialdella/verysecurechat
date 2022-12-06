@@ -142,10 +142,8 @@ def send_receive_client_message(client_connection, client_ip_addr):
                 except:
                     server_msg = ""
 
-
                 if ( DEBUG_MODE ) :
                     print ( server_msg )
-
 
     # find the client index then remove from both lists(client name list and connection list)
     idx = get_client_index(clients, client_connection)
