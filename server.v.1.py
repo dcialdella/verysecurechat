@@ -109,7 +109,6 @@ def send_receive_client_message(client_connection, client_ip_addr):
     global server, client_name, clients, clients_addr
     client_msg = " "
 
-    # send welcome message to client
     try:
         client_name  = client_connection.recv(4096).decode()
         welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars.\n\n"
@@ -122,11 +121,14 @@ def send_receive_client_message(client_connection, client_ip_addr):
     update_client_names_display(clients_names)  # update client names display
 
     while True:
+
         try:
             data = client_connection.recv(4096).decode()
         except:
             data = ""
 
+#   if data == "":
+#       data = 'a'
         if not data: break
         if data == "fin": break
 
@@ -147,6 +149,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
                 if ( DEBUG_MODE ) :
                     print ( server_msg )
 
+
     # find the client index then remove from both lists(client name list and connection list)
     idx = get_client_index(clients, client_connection)
     del clients_names[idx]
@@ -156,6 +159,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
     client_connection.close()
 
     update_client_names_display(clients_names)  # update client names display
+
 
 # Return the index of the current client in the list of clients
 def get_client_index(client_list, curr_client):
@@ -183,8 +187,11 @@ start_server()
 if (config['gui']):
     window.mainloop()
 else:
-
+    try:
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        pass
 #
 # EOF
 #
-
