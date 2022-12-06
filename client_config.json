@@ -1,5 +1,6 @@
 {
   "GPGid":  "182DA782",
   "server": "127.0.0.1",
-  "port":    13031
+  "port":    13031,
+  "debug":   false
 }

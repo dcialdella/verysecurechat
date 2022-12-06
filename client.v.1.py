@@ -1,58 +1,63 @@
 # Client define server ip / port 13031
-# v 1.31 - minor changes
-# Fix for Windows O.S. thanks ZeroCool22 for Debugging.
-
+# v 1.40 - minor changes
+# Fix for Windows O.S. 
+# Thanks ZeroCool22 for Debugging.
+# Thanks IGNIZ for CONFIG FILES.
+#
 # import gnupg
 # gpg = gnupg.GPG(gnupghome='/usr/bin')
 # encrypted_ascii_data = gpg.encrypt(data, recipients)
 # decrypted_data = gpg.decrypt(data)
 
-from sys import platform 
+import sys 
 import tkinter as tk 
 from tkinter import messagebox
 import socket
 import threading
 import subprocess
-# import os
 import datetime
-
 import json
+# import os
 
 #read config file
 configFile = open ('client_config.json', "r")
 config = json.load(configFile)
 
-window = tk.Tk()
-window.title("Cliente v 1.30")
-username = " "
-
-debug_mode = 0 
-
-# Quien Envia los mensajes, USARA el NOMBRE DE USUARIO
-
-# IDENTIFICADOR DEL DESTINATARIO - GUID acordado entre el GRUPO, hay que tener el PRIVATE ID.
-# GPGuidDestino = "182DA782"   # ---------------------------------------------
-GPGuidDestino = config['GPGid']
-
-# PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
-emisorpgp = "FD58636F"   # ---------------------------------------------
-# emisorpgp = "182DA782"
-# emisorpgp = "FD58636F"
-# emisorpgp = "4C189F0A"
-
-# network client
 client = None
 HOST_ADDR = config['server']
 HOST_PORT = config['port']
 
+debug_mode = config['debug'] 
+
+if ( HOST_ADDR == '' ) or ( HOST_PORT == '' ):
+    sys.exit( 'No server IP or PORT.' )  
+
+# IDENTIFICADOR DEL DESTINATARIO - GUID acordado entre el GRUPO, hay que tener el PRIVATE ID.
+# GPGuidDestino = "182DA782"   # ---------------------------------------------
+GPGuidDestino = config['GPGid']
+if ( GPGuidDestino == '' ):
+    GPGuidDestino = "182DA782" 
+
+# PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
+emisorpgp = "182DA782"   # ---------------------------------------------
+# emisorpgp = "182DA782"
+# emisorpgp = "FD58636F"
+# emisorpgp = "4C189F0A"
+
+
+window = tk.Tk()
+window.title("Cliente v 1.40")
+username = " "
+
+
 sisope=''
-if platform == "linux" or platform == "linux2":
+if sys.platform == "linux" or sys.platform == "linux2":
     # linux
     sisope=' 2> /dev/null'
-elif platform == "darwin":
+elif sys.platform == "darwin":
     # OS X
     sisope=' 2> /dev/null'
-elif platform == "win32":
+elif sys.platform == "win32":
     # Windows...
     sisope=' 2>NUL'
 
@@ -79,7 +84,6 @@ tkDisplay.tag_config("tag_your_message2", foreground="blue")
 scrollBar.config(command=tkDisplay.yview)
 tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
 displayFrame.pack(side=tk.TOP)
-
 
 bottomFrame = tk.Frame(window)
 
@@ -149,18 +153,18 @@ def receive_message_from_server(sck, m):
 
                 try:
                     salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
-                    print ( "OK - " + str(cuando) )
+                    if ( debug_mode ):
+                        print ( "OK - " + str(cuando) )
                     # print( 'LINE  1: ' + str(salida.stdout) )
                     tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + salida.stdout ,  "tag_your_message2")
                 except:
-                    salida = 'Error en el des-encriptado.'
-                    print ( 'Error -' + str(cuando) )
+                    if ( debug_mode ):
+                        salida = 'Error en el des-encriptado.'
+                        print ( 'Error -' + str(cuando) )
 
-# capturar error de DECOD
-#                error  = subprocess.error
                 if debug_mode == 1:
-                    print( 'LINE  D: ' + str(comando) + '\n')
-                    print( 'CODED D: ' + str(salida.stdout) + '\n')
+                    print( 'LINE SYS: ' + str(comando) + '\n')
+                    print( 'LINE MSG: ' + str(salida.stdout) + '\n')
 
             else:
                 # Si no es un mensaje PGP lo presenta como esta
@@ -205,12 +209,12 @@ def send_msg_to_server(msg):
         quit()
 
     if len(client_msg) >0:
-# Des-comentar para ver mensaje en claro
-#        print( 'Msg: ' + str(msg) )
-#        client.send(client_msg.encode())
+        # Des-comentar para ver mensaje en claro
+        #        print( 'Msg: ' + str(msg) )
+        #        client.send(client_msg.encode())
 
         emisorpgp = username
-# Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
+        # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
         comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + sisope
 
         cuando = datetime.datetime.now()
@@ -219,7 +223,8 @@ def send_msg_to_server(msg):
             salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
             # print ( 'OK.')
             # print( 'LINE  1: ' + str(salida.stdout) )
-            print( "MANDO:\n" + str(cuando) + '\n' + str(salida.stdout) + "\n")
+            if ( debug_mode ):
+                print( "MANDO:\n" + str(cuando) + '\n' + str(salida.stdout) + "\n")
             client.send( salida.stdout.encode() )
         except:
             salida = 'Error en el encriptado.'
