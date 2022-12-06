@@ -36,11 +36,13 @@ gpg –list-public-keys
 
 
 # How test it 
+```
 Linux.
 -- python3 client.v.1.py
+
 OSX
 -- python3 client.v.1.py
-
+```
 
 
 ## Donations
