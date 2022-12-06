@@ -57,4 +57,4 @@ BANK ACCOUNT LT32 3250 0803 5132 5244
 BIC REVOLT21
 ```
 
-![alt text]([[image.png](https://github.com/dcialdella/verysecurechat/blob/main/image.png)]([image.png](https://github.com/dcialdella/verysecurechat/blob/main/image.png))
+![My Image](image.png)
