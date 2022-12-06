@@ -1,4 +1,4 @@
-# VerySecureChat v1.30 - GPL v2.0
+# VerySecureChat v1.30 - GPL v2.0 - IN TEST !
 ## Very Secure Chat using GPG as encryption system
 ### Linux Tested - OSX Tested - Windows (on test process)
 
