@@ -119,7 +119,12 @@ def send_receive_client_message(client_connection, client_ip_addr):
     update_client_names_display(clients_names)  # update client names display
 
     while True:
-        data = client_connection.recv(4096).decode()
+        try:
+            data = client_connection.recv(4096).decode()
+        except:
+            data = ""
+
+        
         if not data: break
         if data == "fin": break
 
@@ -131,8 +136,13 @@ def send_receive_client_message(client_connection, client_ip_addr):
         for c in clients:
             if c != client_connection:
 #                server_msg = str(sending_client_name + "->" + client_msg)
-                server_msg = str(client_msg)
-                c.send(server_msg.encode())
+                try:
+                    server_msg = str(client_msg)
+                    c.send(server_msg.encode())
+                except:
+                    server_msg = ""
+
+
                 if ( DEBUG_MODE ) :
                     print ( server_msg )
 
@@ -174,11 +184,7 @@ start_server()
 if (config['gui']):
     window.mainloop()
 else:
-    try:
-        while True:
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        pass
+
 #
 # EOF
 #
