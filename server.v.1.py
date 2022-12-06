@@ -124,7 +124,6 @@ def send_receive_client_message(client_connection, client_ip_addr):
         except:
             data = ""
 
-        
         if not data: break
         if data == "fin": break
 
