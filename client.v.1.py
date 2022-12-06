@@ -233,8 +233,8 @@ def send_msg_to_server(msg):
 
         # validar RETURNCODE, por errores
         if debug_mode == 1:
-            print( 'LINE  D: ' + str(comando) + "\n")
-            print( 'LINE  D: ' + str(salida.stdout) + "\n")
+            print( 'LINE SYS: ' + str(comando) + "\n")
+            print( 'LINE MSG: ' + str(salida.stdout) + "\n")
 
 window.mainloop()
  
