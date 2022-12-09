@@ -47,7 +47,8 @@ gpg –list-public-keys
 ```
 Linux.
 -- python3 server.v.1.py
--- python3 client.v.1.py
+-- python3 client.v.1.pygit status
+
 
 OSX
 -- python3 server.v.1.py
