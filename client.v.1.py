@@ -1,17 +1,18 @@
 # Client define server ip / port 13031
 # v 1.40 - minor changes
-# Fix for Windows O.S. 
+# Fix for Windows O.S.
 # Thanks ZeroCool22 for Debugging.
 # Thanks IGNIZ for CONFIG FILES.
 #
-# import gnupg
+import gnupg
 # gpg = gnupg.GPG(gnupghome='/usr/bin')
 # encrypted_ascii_data = gpg.encrypt(data, recipients)
 # decrypted_data = gpg.decrypt(data)
 
-import sys 
-import tkinter as tk 
+import sys
+import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk
 import socket
 import threading
 import subprocess
@@ -27,18 +28,24 @@ client = None
 HOST_ADDR = config['server']
 HOST_PORT = config['port']
 
-debug_mode = config['debug'] 
+debug_mode = config['debug']
 
 if ( HOST_ADDR == '' ) or ( HOST_PORT == '' ):
-    sys.exit( 'No server IP or PORT.' )  
+    sys.exit( 'No server IP or PORT.' )
+
+### debug
+gpg = gnupg.GPG()
+public_keys = gpg.list_keys()
+private_keys = gpg.list_keys(secret=True)
+### end debug
 
 # IDENTIFICADOR DEL DESTINATARIO - GUID acordado entre el GRUPO, hay que tener el PRIVATE ID.
 # GPGuidDestino = "182DA782"   # ---------------------------------------------
 GPGuidDestino = config['GPGid']
 if ( GPGuidDestino == '' ):
-    GPGuidDestino = "182DA782" 
+    GPGuidDestino = "182DA782"
 
-# PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP 
+# PGP User ID, lo tomara del nombre de usuario. Hay que tener el PUBLIC PGP
 emisorpgp = "182DA782"   # ---------------------------------------------
 # emisorpgp = "182DA782"
 # emisorpgp = "FD58636F"
@@ -65,9 +72,21 @@ elif sys.platform == "win32":
 topFrame = tk.Frame(window)
 lblName = tk.Label(topFrame, text = "GPG U.ID:").pack(side=tk.LEFT)
 entNameText = tk.StringVar()
-entName = tk.Entry(topFrame, textvariable=entNameText)
+# entNameText.set(GPGuidDestino)
+
+# entName = tk.Entry(topFrame, textvariable=entNameText)
+# entName.pack(side=tk.LEFT)
+entName = ttk.Combobox(topFrame, width=27, textvariable=entNameText)
 entName.pack(side=tk.LEFT)
-entNameText.set(GPGuidDestino)
+keyNames = []
+for key in private_keys:
+    # entName['values'] = tuple(list(entName['values']) + [key['uids'][0]])
+    keyNames.append(key['uids'][0])
+
+entName['values'] = keyNames
+# set first available private key
+entNameText.set(keyNames[0])
+
 btnConnect = tk.Button(topFrame, text="Conectar", command=lambda : connect())
 btnConnect.pack(side=tk.LEFT)
 #btnConnect.bind('<Button-1>', connect)
@@ -78,7 +97,7 @@ lblLine = tk.Label(displayFrame, text="*****************************************
 scrollBar = tk.Scrollbar(displayFrame)
 scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
 tkDisplay = tk.Text(displayFrame, height=30, width=70, fg="black")
-tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
+tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(25, 0))
 tkDisplay.tag_config("tag_your_message",  foreground="green")
 tkDisplay.tag_config("tag_your_message2", foreground="blue")
 scrollBar.config(command=tkDisplay.yview)
@@ -96,6 +115,14 @@ tkMessage.config(highlightbackground="grey", state="disabled")
 tkMessage.bind("<Return>", (lambda event: getChatMessage(tkMessage.get("1.0", tk.END))))
 bottomFrame.pack(side=tk.BOTTOM)
 
+tkUserList = tk.Listbox(displayFrame, height=30, width=25)
+tkUserList.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
+tkUserList.insert(0, '<Todos>')
+i = 1
+for key in public_keys:
+    tkUserList.insert(i, key['uids'])
+    i = i + 1
+tkUserList.select_set(0)
 
 def connect():
     global username, client
@@ -148,23 +175,24 @@ def receive_message_from_server(sck, m):
             cuando = datetime.datetime.now()
 
             if 'PGP MESSAGE' in from_server:
-                emisorpgp = username
-                comando='echo "' + from_server + '" | gpg -d -u ' + emisorpgp + sisope
-
+                #decrypt
+                decrypted_data = gpg.decrypt(from_server)
                 try:
-                    salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
                     if ( debug_mode ):
-                        print ( "OK - " + str(cuando) )
-                    # print( 'LINE  1: ' + str(salida.stdout) )
-                    tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + salida.stdout ,  "tag_your_message2")
+                        print('ok: ', decrypted_data.ok)
+                        print('status: ', decrypted_data.status)
+                        print('stderr: ', decrypted_data.stderr)
+                        print('decrypted string: ', decrypted_data.data)
+                    if (decrypted_data.ok):
+                        tkDisplay.insert(tk.END, "IN: " + str(cuando) + ' - ' + str(decrypted_data) + "\n",  "tag_your_message2")
                 except:
                     if ( debug_mode ):
                         salida = 'Error en el des-encriptado.'
                         print ( 'Error -' + str(cuando) )
 
-                if debug_mode == 1:
-                    print( 'LINE SYS: ' + str(comando) + '\n')
-                    print( 'LINE MSG: ' + str(salida.stdout) + '\n')
+                # if debug_mode == 1:
+                #     print( 'LINE SYS: ' + str(comando) + '\n')
+                #     print( 'LINE MSG: ' + str(salida.stdout) + '\n')
 
             else:
                 # Si no es un mensaje PGP lo presenta como esta
@@ -213,31 +241,40 @@ def send_msg_to_server(msg):
         #        print( 'Msg: ' + str(msg) )
         #        client.send(client_msg.encode())
 
-        emisorpgp = username
+        # emisorpgp = username
         # Armo codigo, Encripto e IMPRIMO en PANTALLA , enviador a destinatario
-        comando='echo "' + client_msg + '" | gpg -u ' + GPGuidDestino + ' -e -a --no-comment --no-verbose -r ' + emisorpgp + sisope
+        destIdx = tkUserList.curselection()[0] - 1
+        # suponemos que el usuario eligio todos
+        destKeys = public_keys
+        # si no eligio a todos, creamos un array de un solo elemento
+        # con el destino que eligio
+        if (destIdx >= 0):
+            # we need to send to all keys
+            destKeys = [public_keys[destIdx]]
 
-        cuando = datetime.datetime.now()
+        # loop con todos los destinos
+        for key in destKeys:
+            destino = key['uids'][0]
+            cuando = datetime.datetime.now()
 
-        try:
-            salida = subprocess.run(comando, shell=True, timeout=4, check=True, text=True, capture_output=True )
-            # print ( 'OK.')
-            # print( 'LINE  1: ' + str(salida.stdout) )
-            if ( debug_mode ):
-                print( "MANDO:\n" + str(cuando) + '\n' + str(salida.stdout) + "\n")
-            client.send( salida.stdout.encode() )
-        except:
-            salida = 'Error en el encriptado.'
-            tkDisplay.insert(tk.END, "Error en envio." + str(cuando) + ' - ' + msg + "\n", "tag_your_message2")
-            print ( 'Error.')
+            try:
+                encrypted_data = gpg.encrypt(client_msg, destino, always_trust=True)
+                encrypted_string = str(encrypted_data)
 
-        # validar RETURNCODE, por errores
-        if debug_mode == 1:
-            print( 'LINE SYS: ' + str(comando) + "\n")
-            print( 'LINE MSG: ' + str(salida.stdout) + "\n")
+                if ( debug_mode ):
+                    print( "MANDO: " + str(cuando) + '\n')
+                    print('ok: ', encrypted_data.ok)
+                    print('status: ', encrypted_data.status)
+                    print('stderr: ', encrypted_data.stderr)
+                    print('plaintext_string: ', client_msg)
+                    print('encrypted_string: ', encrypted_string)
+                client.send( encrypted_string.encode() )
+            except:
+                tkDisplay.insert(tk.END, "Error en envio." + str(cuando) + ' - ' + msg + "\n", "tag_your_message2")
+                print ( 'Error.')
 
 window.mainloop()
- 
+
 #
 # EOF
 #
