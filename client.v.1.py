@@ -1,8 +1,8 @@
 # Client define server ip / port 13031
-# v 1.40 - minor changes
+# v 1.50 - minor changes
 # Fix for Windows O.S.
 # Thanks ZeroCool22 for Debugging.
-# Thanks IGNIZ for CONFIG FILES.
+# Thanks IGNIZ for Lot of changes
 #
 import gnupg
 # gpg = gnupg.GPG(gnupghome='/usr/bin')
@@ -53,7 +53,7 @@ emisorpgp = "182DA782"   # ---------------------------------------------
 
 
 window = tk.Tk()
-window.title("Cliente v 1.40")
+window.title("Cliente v 1.50")
 username = " "
 
 
