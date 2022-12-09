@@ -57,4 +57,8 @@ BANK ACCOUNT LT32 3250 0803 5132 5244
 BIC REVOLT21
 ```
 
+#Version 1.50
+![My Image](imagev1.50.png)
+
+#Version 1.40
 ![My Image](image.png)
