@@ -66,6 +66,7 @@ BIC REVOLT21
 
 #Version 1.50
 ![My Image](imagev1.50.png)
+![My Image](imagev1.50b.png)
 
 #Version 1.40
 ![My Image](image.png)
