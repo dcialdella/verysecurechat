@@ -117,7 +117,7 @@ bottomFrame.pack(side=tk.BOTTOM)
 
 tkUserList = tk.Listbox(displayFrame, height=30, width=60)
 tkUserList.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
-tkUserList.insert(0, '<Todos>')
+# tkUserList.insert(0, '<Todos>')
 i = 1
 for key in public_keys:
     tkUserList.insert(i, key['uids'])
