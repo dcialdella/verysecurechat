@@ -1,6 +1,6 @@
 # SERVER 13031 - 0.0.0.0
 # minor changes applied
-# v 1.40
+# v 1.50
 
 # import tkinter as tk  NOT NEEDED if no GUI
 import socket
@@ -31,7 +31,7 @@ if (config['gui']):
     import tkinter as tk
 
     window = tk.Tk()
-    window.title("Sevidor Central v 1.40")
+    window.title("Sevidor Central v 1.50")
 
     # Top frame consisting of two buttons widgets (i.e. btnStart, btnStop)
     topFrame = tk.Frame(window)
