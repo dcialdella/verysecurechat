@@ -2,8 +2,6 @@
 ## Very Secure Chat using GPG as encryption system
 ### Linux Tested - OSX Tested - Windows (on test process)
 
-# Working in the version V 2.0
-## Starting it again from Scratch.
 Server runs on port 13031 - hostname defined in SERVER Python code
 Clients runs and connect to SERVER name, port 13031.
 
@@ -15,6 +13,8 @@ Every client will try to de-crypt message, if the message is not PGP, will be sh
 
 You need GPG instgalled and Pub/Priv key (you) and PUB keys for others.
 You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
+
+Thanks to IGNIZ for lot of changes.
 
 
 
@@ -62,3 +62,7 @@ BIC REVOLT21
 
 #Version 1.40
 ![My Image](image.png)
+
+
+# Working in the version V 2.0
+## Starting it again from Scratch.
