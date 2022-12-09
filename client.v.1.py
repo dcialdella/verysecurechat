@@ -76,7 +76,7 @@ entNameText = tk.StringVar()
 
 # entName = tk.Entry(topFrame, textvariable=entNameText)
 # entName.pack(side=tk.LEFT)
-entName = ttk.Combobox(topFrame, width=27, textvariable=entNameText)
+entName = ttk.Combobox(topFrame, width=70, textvariable=entNameText)
 entName.pack(side=tk.LEFT)
 keyNames = []
 for key in private_keys:
