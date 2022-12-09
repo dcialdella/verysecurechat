@@ -69,7 +69,7 @@ BIC REVOLT21
 ![My Image](imagev1.50.png)
 ![Messages](imagev1.50b.png)
 
-![Windows Test](imagev1.5win.png)
+![Windows Test](imagev1.50win.png)
 
 
 ## Version 1.40
