@@ -17,6 +17,13 @@ You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
 ***Thanks to IGNIZ for lot of changes.***
 
 
+*** -  ***
+
+*** -  ***
+*** -  ***
+*** -  ***
+*** -  ***
+
 
 ***For WINDOWS***
 https://gpg4win.org/download.html
