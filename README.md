@@ -27,7 +27,8 @@ You have PRIV/PUB key for your GPG U ID and the Pub KEY for GENERAL UID
 
 ***For WINDOWS***
 https://gpg4win.org/download.html
-SOME ISSUES with PGP / NEW LINE / others
+SOME ISSUES with PGP / NEW LINE / others.
+Must install GNUPG and Python 3.11 for Windows.
 
 ***For OSX***
 https://gpgtools.org/
