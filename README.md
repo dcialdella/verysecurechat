@@ -73,7 +73,9 @@ BIC REVOLT21
 
 ![Windows Test](imagev1.50win.png)
 
-https://www.youtube.com/watch?v=8b_zBTbr9aU
+[![Watch the video](imagev1.50.png)]([[https://youtu.be/vt5fpE0bzSY](https://www.youtube.com/watch?v=8b_zBTbr9aU)](https://www.youtube.com/watch?v=8b_zBTbr9aU))
+
+
 
 ## Version 1.40
 ![My Image](image.png)
