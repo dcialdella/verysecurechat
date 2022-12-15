@@ -109,7 +109,7 @@ bottomFrame = tk.Frame(window)
 lblName = tk.Label(bottomFrame, text = "Mensaje:").pack(side=tk.LEFT)
 # entName = tk.Entry(topFrame)
 
-tkMessage = tk.Text(bottomFrame, height=1, width=55)
+tkMessage = tk.Text(bottomFrame, height=1, width=95)
 tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10))
 tkMessage.config(highlightbackground="grey", state="disabled")
 tkMessage.bind("<Return>", (lambda event: getChatMessage(tkMessage.get("1.0", tk.END))))
