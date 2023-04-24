@@ -1,4 +1,4 @@
-# VerySecureChat v1.50 - GPL v2.0 - IN TEST !
+# VerySecureChat v1.50 - GPL v2.0 - IN TEST ! Still keeping it.
 ## Very Secure Chat using GPG as encryption system
 ### Linux Tested - OSX Tested - Windows (on test process)
 ### Starting Secure in 2023.
