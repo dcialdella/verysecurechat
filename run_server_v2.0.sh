@@ -16,8 +16,9 @@ fi
 source "$VENV_DIR/bin/activate"
 
 # Instalar/actualizar requerimientos
-echo "Instalando dependencias necesarias (python-gnupg)..."
-pip install -r requirements.txt --upgrade
+echo "Instalando y actualizando dependencias de VENV a lo mas nuevo..."
+python3 -m pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt --upgrade --upgrade-strategy eager
 
 # Correr el servidor
 echo "Arrancando el servidor..."

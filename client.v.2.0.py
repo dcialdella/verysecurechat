@@ -1,5 +1,5 @@
 # Client define server ip / port 13031
-# v 1.50 - minor changes
+# v 2.0 - minor changes
 # Fix for Windows O.S.
 # Thanks ZeroCool22 for Debugging.
 # Thanks IGNIZ for Lot of changes
@@ -63,54 +63,90 @@ if not GPGuidDestino:
 emisorpgp = GPGuidDestino
 
 window = tk.Tk()
-window.title("Cliente v 1.50 Refactored")
+window.title("Cliente v 2.1 (VerySecureChat)")
 username = " "
 
-topFrame = tk.Frame(window)
-tk.Label(topFrame, text="GPG U.ID:").pack(side=tk.LEFT)
+BG_COLOR = "#1a1b26"
+FG_COLOR = "#c0caf5"
+ACCENT = "#7aa2f7"
+BTN_BG = "#3d59a1"
+window.configure(bg=BG_COLOR)
+
+style = ttk.Style()
+try: style.theme_use('clam')
+except: pass
+style.configure("TFrame", background=BG_COLOR)
+style.configure("TLabel", background=BG_COLOR, foreground=FG_COLOR, font=("Helvetica", 12))
+style.configure("TButton", background=BTN_BG, foreground="white", font=("Helvetica", 11, "bold"), padding=3)
+style.map("TButton", background=[("active", ACCENT)])
+
+topFrame = ttk.Frame(window)
+ttk.Label(topFrame, text="GPG U.ID:").pack(side=tk.LEFT, padx=5)
 entNameText = tk.StringVar()
+entName = ttk.Combobox(topFrame, width=50, textvariable=entNameText)
+entName.pack(side=tk.LEFT, padx=5)
 
-entName = ttk.Combobox(topFrame, width=70, textvariable=entNameText)
-entName.pack(side=tk.LEFT)
-
-# Validacion rapida para que no crashee sin llaves
 keyNames = [key['uids'][0] for key in private_keys] if private_keys else ["<Ninguna Clave Privada GPG>"]
-
 entName['values'] = keyNames
-if keyNames:
-    entNameText.set(keyNames[0])
+if keyNames: entNameText.set(keyNames[0])
 
-btnConnect = tk.Button(topFrame, text="Conectar", command=lambda: connect())
-btnConnect.pack(side=tk.LEFT)
-topFrame.pack(side=tk.TOP)
+btnConnect = ttk.Button(topFrame, text="Conectar", command=lambda: connect())
+btnConnect.pack(side=tk.LEFT, padx=5)
+btnDisconnect = ttk.Button(topFrame, text="Desconectar", command=lambda: handle_disconnection())
+btnDisconnect.state(["disabled"])
+btnDisconnect.pack(side=tk.LEFT, padx=5)
+btnReload = ttk.Button(topFrame, text="🔄 Recargar Llaves", command=lambda: reload_keys())
+btnReload.pack(side=tk.LEFT, padx=5)
+topFrame.pack(side=tk.TOP, pady=15)
 
-displayFrame = tk.Frame(window)
-tk.Label(displayFrame, text="*"*69).pack()
+displayFrame = ttk.Frame(window)
 scrollBar = tk.Scrollbar(displayFrame)
 scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
-tkDisplay = tk.Text(displayFrame, height=30, width=70, fg="black")
-tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(25, 0))
-tkDisplay.tag_config("tag_your_message",  foreground="green")
-tkDisplay.tag_config("tag_your_message2", foreground="blue")
+tkDisplay = tk.Text(displayFrame, height=25, width=65, bg="#24283b", fg=FG_COLOR, font=("Helvetica", 12), insertbackground=FG_COLOR, highlightthickness=0, borderwidth=1)
+tkDisplay.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(15, 0))
+tkDisplay.tag_config("tag_your_message",  foreground="#9ece6a")
+tkDisplay.tag_config("tag_your_message2", foreground="#7aa2f7")
 scrollBar.config(command=tkDisplay.yview)
-tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
-displayFrame.pack(side=tk.TOP)
+tkDisplay.config(yscrollcommand=scrollBar.set, state="disabled")
+displayFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10)
 
-bottomFrame = tk.Frame(window)
-tk.Label(bottomFrame, text="Mensaje:").pack(side=tk.LEFT)
-tkMessage = tk.Text(bottomFrame, height=1, width=100)
-tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10))
-tkMessage.config(highlightbackground="grey", state="disabled")
+bottomFrame = ttk.Frame(window)
+ttk.Label(bottomFrame, text="Mensaje:").pack(side=tk.LEFT, padx=5)
+tkMessage = tk.Text(bottomFrame, height=4, width=70, bg="#24283b", fg=FG_COLOR, font=("Helvetica", 12), insertbackground=FG_COLOR, highlightthickness=0, borderwidth=1)
+tkMessage.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 5), pady=(10, 15))
+tkMessage.config(state="disabled")
 tkMessage.bind("<Return>", (lambda event: getChatMessage(tkMessage.get("1.0", tk.END))))
-bottomFrame.pack(side=tk.BOTTOM)
+bottomFrame.pack(side=tk.BOTTOM, fill=tk.X)
 
-tkUserList = tk.Listbox(displayFrame, height=30, width=60)
-tkUserList.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
-tkUserList.insert(0, '<Todos>')
-for i, key in enumerate(public_keys, start=1):
+tkUserList = tk.Listbox(displayFrame, height=25, width=36, exportselection=False, bg="#24283b", fg=FG_COLOR, selectbackground=ACCENT, selectforeground="#000000", highlightthickness=0, font=("Helvetica", 12))
+tkUserList.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))
+tkUserList.insert(0, '<SELECCIONE DESTINO>')
+tkUserList.insert(1, '<Todos>')
+for i, key in enumerate(public_keys, start=2):
     val = key['uids'][0] if key.get('uids') else 'Unknown ID'
     tkUserList.insert(i, val)
 tkUserList.select_set(0)
+
+def reload_keys():
+    global public_keys, private_keys
+    try:
+        public_keys = gpg.list_keys()
+        private_keys = gpg.list_keys(True)
+        kN = [key['uids'][0] for key in private_keys] if private_keys else ["<Ninguna Clave Privada GPG>"]
+        entName['values'] = kN
+        if kN and not entName.get():
+            entNameText.set(kN[0])
+            
+        tkUserList.delete(0, tk.END)
+        tkUserList.insert(0, '<SELECCIONE DESTINO>')
+        tkUserList.insert(1, '<Todos>')
+        for i, key in enumerate(public_keys, start=2):
+            val = key['uids'][0] if key.get('uids') else 'Unknown ID'
+            tkUserList.insert(i, val)
+        tkUserList.select_set(0)
+        if debug_mode: print("Claves PGP recargadas en vivo.")
+    except Exception as e:
+        messagebox.showerror("ERROR!!!", f"Fallo al recargar GPG: {e}")
 
 def connect():
     global username, client
@@ -132,13 +168,27 @@ def connect_to_server(name):
         send_data(client, name.encode('utf-8'))
 
         entName.config(state="disabled")
-        btnConnect.config(state="disabled")
+        btnConnect.state(["disabled"])
+        btnDisconnect.state(["!disabled"])
         tkMessage.config(state="normal")
         tkMessage.focus_set()
 
         threading.Thread(target=receive_message_from_server, args=(client,), daemon=True).start()
     except Exception as e:
         messagebox.showerror("ERROR!!!", f"Error al conectar al servidor {HOST_ADDR}:{HOST_PORT}.\n{e}")
+
+def handle_disconnection():
+    global client
+    if client:
+        try: client.close()
+        except: pass
+        client = None
+    entName.config(state="normal")
+    btnConnect.state(["!disabled"])
+    try: btnDisconnect.state(["disabled"])
+    except: pass
+    tkMessage.config(state="disabled")
+    insert_text_safe("\n--- DESCONECTADO DEL SERVIDOR ---\n", "tag_your_message")
 
 def insert_text_safe(text, tag=None):
     def _insert():
@@ -155,10 +205,15 @@ def receive_message_from_server(sck):
     while True:
         try:
             raw = recv_data(sck)
-            if not raw: break
+            if raw is None: break
             from_server = raw.decode('utf-8', errors='replace')
         except:
             break
+            
+        if from_server == "SYS:PING":
+            try: send_data(sck, b"SYS:PONG")
+            except: pass
+            continue
 
         cuando = datetime.datetime.now()
 
@@ -175,7 +230,7 @@ def receive_message_from_server(sck):
     try:
         sck.close()
     except: pass
-    window.after(0, window.destroy)
+    window.after(0, handle_disconnection)
 
 def getChatMessage(msg):
     msg = msg.replace('\n', '')
@@ -195,9 +250,14 @@ def send_msg_to_server(msg):
 
     if len(client_msg) > 0:
         selections = tkUserList.curselection()
-        destIdx = selections[0] - 1 if selections else -1
-        destKeys = public_keys
-        if destIdx >= 0:
+        if not selections or selections[0] == 0:
+            messagebox.showwarning("Destino Inválido", "Tienes seleccionado <SELECCIONE DESTINO>.\nPor seguridad humana, por favor selecciona a qué contacto o grupo enviarás este mensaje.")
+            return
+            
+        if selections[0] == 1:
+            destKeys = public_keys
+        else:
+            destIdx = selections[0] - 2
             destKeys = [public_keys[destIdx]]
 
         for key in destKeys:
@@ -206,11 +266,22 @@ def send_msg_to_server(msg):
 
             try:
                 encrypted_data = gpg.encrypt(client_msg, destino, always_trust=True)
+                if not encrypted_data.ok:
+                    if debug_mode: print(f"MANDO: {cuando}. OK: False (Clave de {destino} inutilizable)")
+                    continue
+                
                 encrypted_string = str(encrypted_data)
-
-                if debug_mode: print(f"MANDO: {cuando}. OK: {encrypted_data.ok}")
+                if debug_mode: print(f"MANDO: {cuando}. OK: True")
                 send_data(client, encrypted_string.encode('utf-8'))
             except Exception as e:
                 insert_text_safe(f"Error en envio a {destino}: {e}\n", "tag_your_message2")
+
+window.update_idletasks()
+w = window.winfo_width()
+h = window.winfo_height()
+x = (window.winfo_screenwidth() // 2) - (w // 2)
+y = (window.winfo_screenheight() // 2) - (h // 2)
+window.geometry(f"+{x}+{y}")
+window.minsize(w, h)
 
 window.mainloop()

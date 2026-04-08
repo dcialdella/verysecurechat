@@ -1,6 +1,6 @@
 # SERVER 13031 - 0.0.0.0
 # minor changes applied
-# v 1.50
+# v 2.0
 
 import socket
 import threading
@@ -8,6 +8,7 @@ import time
 import json
 import sys
 import struct
+import datetime
 
 def send_data(sock, data):
     sock.sendall(struct.pack('!I', len(data)))
@@ -40,16 +41,18 @@ HOST_PORT  = config.get('port', 13031)
 DEBUG_MODE = config.get('debug', False)
 
 clients = {} # mapping from client_connection (socket) to name (str)
+clients_last_seen = {}
 
 window = None
 tkDisplay = None
+tkTraffic = None
 btnStart = None
 
 if config.get('gui', False):
     import tkinter as tk
 
     window = tk.Tk()
-    window.title("Servidor Central v 1.50")
+    window.title("Servidor Central v 2.0")
 
     topFrame = tk.Frame(window)
     btnStart = tk.Button(topFrame, text="RESTART", command=lambda : restart_server() )
@@ -71,7 +74,29 @@ if config.get('gui', False):
     tkDisplay.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
     scrollBar.config(command=tkDisplay.yview)
     tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
-    clientFrame.pack(side=tk.BOTTOM, pady=(5, 10))
+    clientFrame.pack(side=tk.TOP, pady=(5, 10))
+
+    trafficFrame = tk.Frame(window)
+    lblTraffic = tk.Label(trafficFrame, text="********** Registro de Trafico **********").pack()
+    scrollBarT = tk.Scrollbar(trafficFrame)
+    scrollBarT.pack(side=tk.RIGHT, fill=tk.Y)
+    tkTraffic = tk.Text(trafficFrame, height=15, width=50, fg="green", bg="black")
+    tkTraffic.pack(side=tk.LEFT, fill=tk.Y, padx=(5, 0))
+    scrollBarT.config(command=tkTraffic.yview)
+    tkTraffic.config(yscrollcommand=scrollBarT.set, state="disabled")
+    trafficFrame.pack(side=tk.BOTTOM, pady=(5, 10))
+
+def log_traffic(msg):
+    if config.get('gui', False) and window:
+        def _log():
+            if tkTraffic:
+                tkTraffic.config(state="normal")
+                tkTraffic.insert("end", str(msg) + "\n")
+                tkTraffic.see("end")
+                tkTraffic.config(state="disabled")
+        window.after(0, _log)
+    elif DEBUG_MODE:
+        print(msg)
 
 server = None
 
@@ -79,10 +104,12 @@ def start_server():
     global server
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         print('Arrancando el servidor en', HOST_ADDR, HOST_PORT)
         server.bind((HOST_ADDR, HOST_PORT))
         server.listen(5)
         
+        threading.Thread(target=heartbeat_loop, daemon=True).start()
         threading.Thread(target=accept_clients, args=(server,), daemon=True).start()
         if btnStart:
             btnStart.config(state="disabled")
@@ -117,10 +144,11 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
     try:
         raw_name = recv_data(client_connection)
-        if not raw_name:
-            raise Exception("No se recibio data inicial")
+        if raw_name is None:
+            raise Exception("Conexion cerrada antes de recibir nombre")
         client_name = raw_name.decode('utf-8', errors='replace')
         clients[client_connection] = client_name
+        clients_last_seen[client_connection] = time.time()
         welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars.\n\n"
         send_data(client_connection, welcome_msg.encode('utf-8'))
     except Exception as e:
@@ -128,19 +156,24 @@ def send_receive_client_message(client_connection, client_ip_addr):
         client_connection.close()
         if client_connection in clients:
             del clients[client_connection]
+            if client_connection in clients_last_seen: del clients_last_seen[client_connection]
         return
 
+    log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {client_name} se conecto.")
     update_client_names_display()
 
     while True:
         try:
             raw_msg = recv_data(client_connection)
-            if not raw_msg:
+            if raw_msg is None:
                 break
                 
             data = raw_msg.decode('utf-8', errors='replace')
+            clients_last_seen[client_connection] = time.time()
             if data == "fin":
                 break
+            if data == "SYS:PONG":
+                continue
 
             client_msg = data
 
@@ -151,6 +184,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
                     except Exception as e:
                         if DEBUG_MODE: print("Error enviando mensaje a cliente:", e)
 
+            log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Relevo: {client_name} -> {len(client_msg)} bytes.")
             if DEBUG_MODE:
                 print(client_msg)
 
@@ -167,7 +201,9 @@ def send_receive_client_message(client_connection, client_ip_addr):
     client_connection.close()
     if client_connection in clients:
         del clients[client_connection]
+        if client_connection in clients_last_seen: del clients_last_seen[client_connection]
 
+    log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {client_name} se desconecto.")
     update_client_names_display()
 
 def real_update_client_names_display(name_list):
@@ -182,6 +218,19 @@ def update_client_names_display():
     if config.get('gui', False) and window:
         names = list(clients.values())
         window.after(0, real_update_client_names_display, names)
+
+def heartbeat_loop():
+    while True:
+        time.sleep(30)
+        now = time.time()
+        for c in list(clients.keys()):
+            last_seen = clients_last_seen.get(c, now)
+            if now - last_seen > 60:
+                try: c.close()
+                except: pass
+            else:
+                try: send_data(c, b"SYS:PING")
+                except: pass
 
 def on_closing():
     print("\nCerrando servidor (UI)...")
