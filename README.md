@@ -60,13 +60,7 @@ OSX
 
 ## Donations
 ```
-Bitcoin  3QeNvmaD7bdbaVqidbwZWE27LTDcJWBpYi
-Monero   4GdoN7NCTi8a5gZug7PrwZNKjvHFmKeV11L6pNJPgj5QNEHsN6eeX3DaAQFwZ1ufD4LYCZKArktt113W7QjWvQ7CW9WdUe986hCBQ4nivK
-LiteCoin LTmsrrWrb5pA77z1zm2fA1hDiuJYrf8gAW
-
-BANK ACCOUNT LT32 3250 0803 5132 5244
-BIC REVOLT21
-```
+ASK ME```
 
 ## Version 1.50
 ![My Image](imagev1.50.png)
