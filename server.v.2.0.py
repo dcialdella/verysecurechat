@@ -7,8 +7,11 @@ import threading
 import time
 import json
 import sys
+import sys
 import struct
 import datetime
+
+MAX_MSG_SIZE = 5 * 1024 * 1024  # Proteccion contra ataques de Memoria (5 MB MAX)
 
 def send_data(sock, data):
     sock.sendall(struct.pack('!I', len(data)))
@@ -26,6 +29,12 @@ def recv_data(sock):
     raw_msglen = recvall(sock, 4)
     if not raw_msglen: return None
     msglen = struct.unpack('!I', raw_msglen)[0]
+    
+    # [SECURITY PATCH] Evitar ataque de agotamiento de memoria (OOM DOS)
+    if msglen > MAX_MSG_SIZE:
+        print(f"[ALERTA DE SEGURIDAD] Paquete malicioso bloqueado. Tamano irreal: {msglen} bytes.")
+        raise ValueError("Payload size limit exceeded")
+        
     return recvall(sock, msglen)
 
 # open file and use it as parameters.
