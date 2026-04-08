@@ -1,6 +1,6 @@
 {
   "GPGid":  "182DA782",
-  "server": "dcialdella.no-ip.com",
+  "server": "127.0.0.1",
   "port":    13031,
   "debug":   true
 }
