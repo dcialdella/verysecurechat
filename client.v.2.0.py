@@ -50,6 +50,8 @@ valid_private_keys = []
 HOST_ADDR = config.get('server', '')
 HOST_PORT = config.get('port', 13031)
 debug_mode = config.get('debug', False)
+if debug_mode: 
+    print("[DEBUG] Modo debug ACTIVADO.")
 
 if not HOST_ADDR or not HOST_PORT:
     sys.exit('No server IP or PORT en la configuracion.')
@@ -230,6 +232,8 @@ def receive_message_from_server(sck):
             break
             
         if from_server == "SYS:PING":
+            if debug_mode:
+                print(f"[DEBUG] SYS:PING recibido - respondiendo PONG")
             try: 
                 send_data(sck, b"SYS:PONG")
             except Exception:
@@ -239,13 +243,21 @@ def receive_message_from_server(sck):
         cuando = datetime.datetime.now()
 
         if 'PGP MESSAGE' in from_server:
+            if debug_mode:
+                print(f"[DEBUG] Mensaje Cifrado Recibido:\n{from_server}")
+
             decrypted_data = gpg.decrypt(from_server)
             if decrypted_data.ok:
-                insert_text_safe(f"IN: {cuando} - {decrypted_data.data.decode(errors='replace')}\n", "tag_your_message2")
+                dec_msg = decrypted_data.data.decode(errors='replace')
+                if debug_mode:
+                    print(f"[DEBUG] Mensaje Descifrado: {dec_msg}")
+                insert_text_safe(f"IN: {cuando} - {dec_msg}\n", "tag_your_message2")
             else:
                 if debug_mode: 
-                    print('Error desencriptando.', decrypted_data.status)
+                    print('[DEBUG] Error desencriptando.', decrypted_data.status)
         else:
+            if debug_mode:
+                print(f"[DEBUG] Mensaje Plano Recibido: {from_server}")
             insert_text_safe(f"IN: {cuando} - {from_server}", "tag_your_message2")
 
     try:
@@ -298,7 +310,9 @@ def send_msg_to_server(msg):
                 
                 encrypted_string = str(encrypted_data)
                 if debug_mode: 
-                    print(f"MANDO: {cuando}. OK: True")
+                    print(f"[DEBUG] Mensaje Plano a enviar: {client_msg}")
+                    print(f"[DEBUG] Bloque Cifrado a enviar:\n{encrypted_string}")
+                    print(f"[DEBUG] MANDO (A {destino}) | OK: True")
                 send_data(client, encrypted_string.encode('utf-8'))
             except Exception as e:
                 insert_text_safe(f"Error en envio a {destino}: {e}\n", "tag_your_message2")
