@@ -7,7 +7,6 @@ import threading
 import time
 import json
 import sys
-import sys
 import struct
 import datetime
 
@@ -21,13 +20,15 @@ def recvall(sock, n):
     data = bytearray()
     while len(data) < n:
         packet = sock.recv(n - len(data))
-        if not packet: return None
+        if not packet: 
+            return None
         data.extend(packet)
     return bytes(data)
 
 def recv_data(sock):
     raw_msglen = recvall(sock, 4)
-    if not raw_msglen: return None
+    if not raw_msglen: 
+        return None
     msglen = struct.unpack('!I', raw_msglen)[0]
     
     # [SECURITY PATCH] Evitar ataque de agotamiento de memoria (OOM DOS)
@@ -161,11 +162,13 @@ def send_receive_client_message(client_connection, client_ip_addr):
         welcome_msg = "Conectado. Hola " + client_name + ", escribe 'fin' o mas de 3 chars.\n\n"
         send_data(client_connection, welcome_msg.encode('utf-8'))
     except Exception as e:
-        if DEBUG_MODE: print("Error al recibir el nombre inicial:", e)
+        if DEBUG_MODE: 
+            print("Error al recibir el nombre inicial:", e)
         client_connection.close()
         if client_connection in clients:
             del clients[client_connection]
-            if client_connection in clients_last_seen: del clients_last_seen[client_connection]
+            if client_connection in clients_last_seen: 
+                del clients_last_seen[client_connection]
         return
 
     log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {client_name} se conecto.")
@@ -191,26 +194,29 @@ def send_receive_client_message(client_connection, client_ip_addr):
                     try:
                         send_data(c, client_msg.encode('utf-8'))
                     except Exception as e:
-                        if DEBUG_MODE: print("Error enviando mensaje a cliente:", e)
+                        if DEBUG_MODE: 
+                            print("Error enviando mensaje a cliente:", e)
 
             log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Relevo: {client_name} -> {len(client_msg)} bytes.")
             if DEBUG_MODE:
                 print(client_msg)
 
         except Exception as e:
-            if DEBUG_MODE: print("Cliente desconectado por error de conexion:", e)
+            if DEBUG_MODE: 
+                print("Cliente desconectado por error de conexion:", e)
             break
 
     try:
         server_msg = "CHAU!"
         send_data(client_connection, server_msg.encode('utf-8'))
-    except:
+    except Exception:
         pass
     
     client_connection.close()
     if client_connection in clients:
         del clients[client_connection]
-        if client_connection in clients_last_seen: del clients_last_seen[client_connection]
+        if client_connection in clients_last_seen: 
+            del clients_last_seen[client_connection]
 
     log_traffic(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {client_name} se desconecto.")
     update_client_names_display()
@@ -235,11 +241,15 @@ def heartbeat_loop():
         for c in list(clients.keys()):
             last_seen = clients_last_seen.get(c, now)
             if now - last_seen > 60:
-                try: c.close()
-                except: pass
+                try: 
+                    c.close()
+                except Exception: 
+                    pass
             else:
-                try: send_data(c, b"SYS:PING")
-                except: pass
+                try: 
+                    send_data(c, b"SYS:PING")
+                except Exception: 
+                    pass
 
 def on_closing():
     print("\nCerrando servidor (UI)...")
