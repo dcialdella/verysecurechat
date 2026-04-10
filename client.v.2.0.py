@@ -17,6 +17,8 @@ import struct
 import time
 import platform
 
+# TCP keepalive constants (applied in connect_to_server)
+# TCP keepalive constants (applied in connect_to_server)
 TCP_KEEPIDLE = 0x10 if platform.system() == "Darwin" else 16
 TCP_KEEPINTVL = 0x11 if platform.system() == "Darwin" else 18
 TCP_KEEPCNT = 0x12 if platform.system() == "Darwin" else 19
@@ -79,7 +81,7 @@ except Exception as e:
     print(f"Critical Error: GPG not installed or in PATH: {e}")
     sys.exit("Please install GPG on your system (e.g., brew install gnupg)")
 
-GPGuidDestino = config.get("GPGid", "182DA782")
+# GPGuidDestino = config.get("GPGid", "182DA782")  # Unused variable
 
 
 def is_valid_key(key):
@@ -138,12 +140,21 @@ keyNames = (
 )
 entName["values"] = keyNames
 if keyNames:
-    # Pre-select the saved GPGid from config
-    saved_gpgid = config.get("GPGid", "")
-    if saved_gpgid and saved_gpgid in keyNames:
-        entNameText.set(saved_gpgid)
-    else:
-        entNameText.set(keyNames[0])
+        # Pre-select the saved GPGid from config (keyid only)
+        saved_gpgid = config.get("GPGid", "")
+        if saved_gpgid:
+            # Find the UID for the saved keyid
+            for key in valid_private_keys:
+                if key.get("keyid", "").upper() == saved_gpgid.upper():
+                    uid = key.get("uids", [""])[0] if key.get("uids") else ""
+                    if uid in keyNames:
+                        entNameText.set(uid)
+                        break
+            else:
+                # KeyID not found in valid keys, use first
+                entNameText.set(keyNames[0])
+        else:
+            entNameText.set(keyNames[0])
 
 btnConnect = ttk.Button(topFrame, text="Connect", command=lambda: connect())
 btnConnect.pack(side=tk.LEFT, padx=5)
@@ -278,10 +289,17 @@ def connect():
 
     username = entName.get()
 
-    # Save the selected GPG private key ID to config
+    # Save only the GPG keyid (not full UID) to config
+    selected_keyid = ""
+    for key in valid_private_keys:
+        uid = key.get("uids", [""])[0] if key.get("uids") else ""
+        if uid == username:
+            selected_keyid = key.get("keyid", "")
+            break
+    
     saved_gpgid = config.get("GPGid", "")
-    if username != saved_gpgid:
-        config["GPGid"] = username
+    if selected_keyid and selected_keyid.upper() != saved_gpgid.upper():
+        config["GPGid"] = selected_keyid
         with open("client_config.json", "w") as configFile:
             json.dump(config, configFile, indent=2)
 
@@ -467,12 +485,10 @@ def send_msg_to_server(msg):
                 "No Recipient", "Please reconnect and select a public key."
             )
             return
-        destKeys = [selected_public_key]
-
-        for key in destKeys:
-            recipient = key["uids"][0] if key.get("uids") else ""
-            recipient_keyid = key.get("keyid", "unknown")
-            recipient_fingerprint = key.get("fingerprint", "")
+        # Access selected key directly (only one recipient)
+        recipient = selected_public_key["uids"][0] if selected_public_key.get("uids") else ""
+        recipient_keyid = selected_public_key.get("keyid", "unknown")
+        recipient_fingerprint = selected_public_key.get("fingerprint", "")
             cuando = datetime.datetime.now()
 
             if debug_mode:
