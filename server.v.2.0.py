@@ -9,6 +9,15 @@ import json
 import sys
 import struct
 import datetime
+import os
+
+LOG_FILE = "server_debug.log"
+
+def log_msg(msg):
+    with open(LOG_FILE, "a") as f:
+        f.write(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {msg}\n")
+    print(msg)
+    sys.stdout.flush()
 
 MAX_MSG_SIZE = 5 * 1024 * 1024  # Proteccion contra ataques de Memoria (5 MB MAX)
 MAX_CLIENTS = 30  # Maximo clientes conectados
@@ -216,13 +225,21 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
     while True:
         try:
+            if DEBUG_MODE:
+                log_msg("[DEBUG] Waiting for client message...")
             raw_msg = recv_data(client_connection)
+            if DEBUG_MODE:
+                log_msg(f"[DEBUG] Received raw_msg: {raw_msg is not None}")
             if raw_msg is None:
+                if DEBUG_MODE:
+                    log_msg("[DEBUG] raw_msg is None - breaking")
                 break
 
             data = raw_msg.decode("utf-8", errors="replace")
             clients_last_seen[client_connection] = time.time()
             if data.upper() == "/QUIT":
+                if DEBUG_MODE:
+                    print(f"[{client_name}] Sent /QUIT, disconnecting...")
                 break
             if data == "SYS:PONG":
                 if DEBUG_MODE:
@@ -231,10 +248,14 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
             client_msg = data
 
+            if DEBUG_MODE:
+                print(f"[DEBUG] Received {len(client_msg)} bytes from {client_name}, preview: {client_msg[:100]}...")
+
             recipients = [c for c in list(clients.keys()) if c != client_connection]
-            print(
-                f"DEBUG: Relaying to {len(recipients)} client(s), total clients: {len(clients)}"
-            )
+            if DEBUG_MODE:
+                print(
+                    f"DEBUG: Relaying to {len(recipients)} client(s), total clients: {len(clients)}"
+                )
 
             for c in recipients:
                 try:
@@ -246,12 +267,24 @@ def send_receive_client_message(client_connection, client_ip_addr):
             log_traffic(
                 f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Relay: {client_name} -> {len(client_msg)} bytes."
             )
+            
+            # Send ACK to sender to confirm message was received
+            try:
+                ack_msg = f"SYS:ACK:{len(client_msg)}"
+                if DEBUG_MODE:
+                    log_msg(f"[DEBUG] Sending ACK to {client_name}: {ack_msg}")
+                send_data(client_connection, ack_msg.encode("utf-8"))
+                if DEBUG_MODE:
+                    log_msg("[DEBUG] ACK sent successfully")
+            except Exception as e:
+                print(f"[DEBUG] Error sending ACK to {client_name}: {e}")
+            
             if DEBUG_MODE:
                 print(f"--- MENSAJE DE {client_name} ---\n{client_msg}\n--- FIN ---")
 
         except Exception as e:
             if DEBUG_MODE:
-                print("Cliente desconectado por error de conexion:", e)
+                log_msg(f"[DEBUG] Exception in client loop: {e}")
             break
 
     try:
