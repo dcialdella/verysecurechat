@@ -382,7 +382,7 @@ def receive_message_from_server(sck):
             except Exception:
                 pass
             continue
-        
+
         if from_server.startswith("SYS:ACK:"):
             if debug_mode:
                 print(f"Message acknowledged by server: {from_server}")

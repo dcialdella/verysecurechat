@@ -9,15 +9,16 @@ import json
 import sys
 import struct
 import datetime
-import os
 
 LOG_FILE = "server_debug.log"
+
 
 def log_msg(msg):
     with open(LOG_FILE, "a") as f:
         f.write(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {msg}\n")
     print(msg)
     sys.stdout.flush()
+
 
 MAX_MSG_SIZE = 5 * 1024 * 1024  # Proteccion contra ataques de Memoria (5 MB MAX)
 MAX_CLIENTS = 30  # Maximo clientes conectados
@@ -249,7 +250,9 @@ def send_receive_client_message(client_connection, client_ip_addr):
             client_msg = data
 
             if DEBUG_MODE:
-                print(f"[DEBUG] Received {len(client_msg)} bytes from {client_name}, preview: {client_msg[:100]}...")
+                print(
+                    f"[DEBUG] Received {len(client_msg)} bytes from {client_name}, preview: {client_msg[:100]}..."
+                )
 
             recipients = [c for c in list(clients.keys()) if c != client_connection]
             if DEBUG_MODE:
@@ -267,7 +270,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
             log_traffic(
                 f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Relay: {client_name} -> {len(client_msg)} bytes."
             )
-            
+
             # Send ACK to sender to confirm message was received
             try:
                 ack_msg = f"SYS:ACK:{len(client_msg)}"
@@ -278,7 +281,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
                     log_msg("[DEBUG] ACK sent successfully")
             except Exception as e:
                 print(f"[DEBUG] Error sending ACK to {client_name}: {e}")
-            
+
             if DEBUG_MODE:
                 print(f"--- MENSAJE DE {client_name} ---\n{client_msg}\n--- FIN ---")
 
