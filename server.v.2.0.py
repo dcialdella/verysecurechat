@@ -2,80 +2,75 @@
 # minor changes applied
 # v 2.7
 
+import argparse
+import datetime
+import json
 import socket
+import sys
 import threading
 import time
-import json
-import sys
-import struct
-import datetime
+from socket import socket as Socket
 
-LOG_FILE = "server_debug.log"
+from src.protocol import send_data, recv_data
+from src.logger import setup_logging
 
+LOG_FILE: str = "server_debug.log"
 
-def log_msg(msg):
-    with open(LOG_FILE, "a") as f:
-        f.write(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {msg}\n")
-    print(msg)
-    sys.stdout.flush()
+MAX_MSG_SIZE: int = 5 * 1024 * 1024
+MAX_CLIENTS: int = 30
+SERVER_BACKLOG: int = 5
+CLIENT_INIT_TIMEOUT: int = 300
+HEARTBEAT_INTERVAL: int = 30
+HEARTBEAT_PING_TIMEOUT: int = 60
+CLIENT_DISCONNECT_TIMEOUT: int = 180
+RELAY_DELAY: float = 0.2
+RESTART_DELAY: float = 1.0
 
+arg_parser = argparse.ArgumentParser(description="VerySecureChat Server v2.7")
+arg_parser.add_argument("--config", default="server_config.json", help="Config file path")
+arg_parser.add_argument("--address", help="Host address to bind")
+arg_parser.add_argument("--port", type=int, help="Port to listen on")
+arg_parser.add_argument("--gui", action="store_true", help="Enable GUI mode")
+arg_parser.add_argument("--no-gui", action="store_true", help="Disable GUI mode")
+arg_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+arg_parser.add_argument("--no-debug", action="store_true", help="Disable debug mode")
+cli_args, _ = arg_parser.parse_known_args()
 
-MAX_MSG_SIZE = 5 * 1024 * 1024  # Proteccion contra ataques de Memoria (5 MB MAX)
-MAX_CLIENTS = 30  # Maximo clientes conectados
-
-
-def send_data(sock, data):
-    sock.sendall(struct.pack("!I", len(data)))
-    sock.sendall(data)
-
-
-def recvall(sock, n):
-    data = bytearray()
-    while len(data) < n:
-        packet = sock.recv(n - len(data))
-        if not packet:
-            return None
-        data.extend(packet)
-    return bytes(data)
-
-
-def recv_data(sock):
-    raw_msglen = recvall(sock, 4)
-    if not raw_msglen:
-        return None
-    msglen = struct.unpack("!I", raw_msglen)[0]
-
-    # [SECURITY PATCH] Evitar ataque de agotamiento de memoria (OOM DOS)
-    if msglen > MAX_MSG_SIZE:
-        print(
-            f"[ALERTA DE SEGURIDAD] Paquete malicioso bloqueado. Tamano irreal: {msglen} bytes."
-        )
-        raise ValueError("Payload size limit exceeded")
-
-    return recvall(sock, msglen)
-
-
-# open file and use it as parameters.
 try:
-    with open("server_config.json", "r") as f:
+    with open(cli_args.config, "r") as f:
         config = json.load(f)
 except FileNotFoundError:
-    print("server_config.json not found, using defaults.")
+    print(f"{cli_args.config} not found, using defaults.")
     config = {"address": "0.0.0.0", "port": 13031, "gui": False, "debug": False}
 
-HOST_ADDR = config.get("address", "0.0.0.0")
-HOST_PORT = config.get("port", 13031)
-DEBUG_MODE = config.get("debug", False)
+HOST_ADDR: str = cli_args.address or config.get("address", "0.0.0.0")
+HOST_PORT: int = cli_args.port or config.get("port", 13031)
 
-clients = {}  # mapping from client_connection (socket) to name (str)
-clients_last_seen = {}
+if cli_args.gui:
+    gui_enabled = True
+elif cli_args.no_gui:
+    gui_enabled = False
+else:
+    gui_enabled = config.get("gui", False)
+
+if cli_args.debug:
+    DEBUG_MODE = True
+elif cli_args.no_debug:
+    DEBUG_MODE = False
+else:
+    DEBUG_MODE = config.get("debug", False)
+
+logger = setup_logging("server", debug=DEBUG_MODE, log_file=LOG_FILE)
+
+clients: dict[Socket, str] = {}
+clients_last_seen: dict[Socket, float] = {}
 
 window = None
 tkDisplay = None
 tkTraffic = None
 btnStart = None
 
-if config.get("gui", False):
+if gui_enabled:
     import tkinter as tk
 
     window = tk.Tk()
@@ -94,7 +89,7 @@ if config.get("gui", False):
     middleFrame.pack(side=tk.TOP, pady=(5, 0))
 
     clientFrame = tk.Frame(window)
-    lblLine = tk.Label(clientFrame, text="********** Connected Users **********").pack()
+    tk.Label(clientFrame, text="********** Connected Users **********").pack()
     scrollBar = tk.Scrollbar(clientFrame)
     scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
     tkDisplay = tk.Text(clientFrame, height=15, width=30, fg="black")
@@ -109,7 +104,7 @@ if config.get("gui", False):
     clientFrame.pack(side=tk.TOP, pady=(5, 10))
 
     trafficFrame = tk.Frame(window)
-    lblTraffic = tk.Label(trafficFrame, text="********** Traffic Log **********").pack()
+    tk.Label(trafficFrame, text="********** Traffic Log **********").pack()
     scrollBarT = tk.Scrollbar(trafficFrame)
     scrollBarT.pack(side=tk.RIGHT, fill=tk.Y)
     tkTraffic = tk.Text(trafficFrame, height=15, width=50, fg="green", bg="black")
@@ -119,43 +114,40 @@ if config.get("gui", False):
     trafficFrame.pack(side=tk.BOTTOM, pady=(5, 10))
 
 
-def log_traffic(msg):
-    if config.get("gui", False) and window:
-
-        def _log():
+def log_traffic(msg: str) -> None:
+    logger.info("TRAFFIC: %s", msg)
+    if gui_enabled and window:
+        def _log() -> None:
             if tkTraffic:
                 tkTraffic.config(state="normal")
                 tkTraffic.insert("end", str(msg) + "\n")
                 tkTraffic.see("end")
                 tkTraffic.config(state="disabled")
-
         window.after(0, _log)
-    elif DEBUG_MODE:
-        print(msg)
 
 
-server = None
+server: Socket | None = None
 
 
-def start_server():
+def start_server() -> None:
     global server
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        print("Starting server v2.7 on", HOST_ADDR, HOST_PORT)
+        logger.info("Starting server v2.7 on %s %s", HOST_ADDR, HOST_PORT)
         server.bind((HOST_ADDR, HOST_PORT))
-        server.listen(5)
+        server.listen(SERVER_BACKLOG)
 
         threading.Thread(target=heartbeat_loop, daemon=True).start()
         threading.Thread(target=accept_clients, args=(server,), daemon=True).start()
         if btnStart:
             btnStart.config(state="disabled")
     except Exception as e:
-        print(f"ERROR starting server: {e}")
+        logger.error("Error starting server: %s", e)
         sys.exit(1)
 
 
-def stop_server():
+def stop_server() -> None:
     global server
     if btnStart:
         btnStart.config(state="normal")
@@ -163,23 +155,20 @@ def stop_server():
         server.close()
 
 
-def restart_server():
+def restart_server() -> None:
     stop_server()
-    time.sleep(1)
+    time.sleep(RESTART_DELAY)
     start_server()
 
 
-def accept_clients(the_server):
+def accept_clients(the_server: Socket) -> None:
     while True:
         try:
             if len(clients) >= MAX_CLIENTS:
                 try:
                     client, addr = the_server.accept()
                     client.close()
-                    if DEBUG_MODE:
-                        print(
-                            f"Connection rejected: max clients ({MAX_CLIENTS}) reached"
-                        )
+                    logger.warning("Connection rejected: max clients (%s) reached", MAX_CLIENTS)
                 except Exception:
                     pass
                 continue
@@ -190,13 +179,13 @@ def accept_clients(the_server):
                 target=send_receive_client_message, args=(client, addr), daemon=True
             ).start()
         except OSError:
-            break  # server socket closed
+            break
 
 
-def send_receive_client_message(client_connection, client_ip_addr):
+def send_receive_client_message(client_connection: Socket, client_ip_addr: tuple) -> None:
     global clients
     client_name = ""
-    client_connection.settimeout(300)
+    client_connection.settimeout(CLIENT_INIT_TIMEOUT)
 
     try:
         raw_name = recv_data(client_connection)
@@ -213,8 +202,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
             f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {client_name} connected. (Clients: {len(clients)})"
         )
     except Exception as e:
-        if DEBUG_MODE:
-            print("Error al recibir el nombre inicial:", e)
+        logger.debug("Error receiving initial name: %s", e)
         client_connection.close()
         if client_connection in clients:
             del clients[client_connection]
@@ -226,68 +214,58 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
     while True:
         try:
-            if DEBUG_MODE:
-                log_msg("[DEBUG] Waiting for client message...")
+            logger.debug("Waiting for client message...")
             raw_msg = recv_data(client_connection)
-            if DEBUG_MODE:
-                log_msg(f"[DEBUG] Received raw_msg: {raw_msg is not None}")
+            logger.debug("Received raw_msg: %s", raw_msg is not None)
             if raw_msg is None:
-                if DEBUG_MODE:
-                    log_msg("[DEBUG] raw_msg is None - breaking")
+                logger.debug("raw_msg is None - breaking")
                 break
 
             data = raw_msg.decode("utf-8", errors="replace")
             clients_last_seen[client_connection] = time.time()
             if data.upper() == "/QUIT":
-                if DEBUG_MODE:
-                    print(f"[{client_name}] Sent /QUIT, disconnecting...")
+                logger.debug("[%s] Sent /QUIT, disconnecting...", client_name)
                 break
             if data == "SYS:PONG":
-                if DEBUG_MODE:
-                    print(f"Heartbeat: received PONG from {client_name}")
+                logger.debug("Heartbeat: received PONG from %s", client_name)
                 continue
 
             client_msg = data
 
-            if DEBUG_MODE:
-                print(
-                    f"[DEBUG] Received {len(client_msg)} bytes from {client_name}, preview: {client_msg[:100]}..."
-                )
+            logger.debug(
+                "Received %d bytes from %s, preview: %s...",
+                len(client_msg), client_name, client_msg[:100]
+            )
 
             recipients = [c for c in list(clients.keys()) if c != client_connection]
-            if DEBUG_MODE:
-                print(
-                    f"DEBUG: Relaying to {len(recipients)} client(s), total clients: {len(clients)}"
-                )
+            logger.debug(
+                "Relaying to %d client(s), total clients: %d",
+                len(recipients), len(clients)
+            )
 
             for c in recipients:
                 try:
                     send_data(c, client_msg.encode("utf-8"))
-                    time.sleep(0.2)
+                    time.sleep(RELAY_DELAY)
                 except Exception as e:
-                    print(f"ERROR sending to client: {e}")
+                    logger.error("Error sending to client: %s", e)
 
             log_traffic(
                 f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Relay: {client_name} -> {len(client_msg)} bytes."
             )
 
-            # Send ACK to sender to confirm message was received
             try:
                 ack_msg = f"SYS:ACK:{len(client_msg)}"
-                if DEBUG_MODE:
-                    log_msg(f"[DEBUG] Sending ACK to {client_name}: {ack_msg}")
+                logger.debug("Sending ACK to %s: %s", client_name, ack_msg)
                 send_data(client_connection, ack_msg.encode("utf-8"))
-                if DEBUG_MODE:
-                    log_msg("[DEBUG] ACK sent successfully")
+                logger.debug("ACK sent successfully")
             except Exception as e:
-                print(f"[DEBUG] Error sending ACK to {client_name}: {e}")
+                logger.error("Error sending ACK to %s: %s", client_name, e)
 
-            if DEBUG_MODE:
-                print(f"--- MENSAJE DE {client_name} ---\n{client_msg}\n--- FIN ---")
+            logger.debug("--- MESSAGE FROM %s ---\n%s\n--- END ---", client_name, client_msg)
 
         except Exception as e:
-            if DEBUG_MODE:
-                log_msg(f"[DEBUG] Exception in client loop: {e}")
+            logger.debug("Exception in client loop: %s", e)
             break
 
     try:
@@ -308,7 +286,7 @@ def send_receive_client_message(client_connection, client_ip_addr):
     update_client_names_display()
 
 
-def real_update_client_names_display(name_list):
+def real_update_client_names_display(name_list: list[str]) -> None:
     if tkDisplay:
         tkDisplay.config(state="normal")
         tkDisplay.delete("1.0", "end")
@@ -317,37 +295,36 @@ def real_update_client_names_display(name_list):
         tkDisplay.config(state="disabled")
 
 
-def update_client_names_display():
-    if config.get("gui", False) and window:
+def update_client_names_display() -> None:
+    if gui_enabled and window:
         names = list(clients.values())
         window.after(0, real_update_client_names_display, names)
 
 
-def heartbeat_loop():
+def heartbeat_loop() -> None:
     global clients, clients_last_seen
     while True:
         try:
-            time.sleep(30)
+            time.sleep(HEARTBEAT_INTERVAL)
             now = time.time()
-            disconnected = []
+            disconnected: list[Socket] = []
 
             for c in list(clients.keys()):
                 last_seen = clients_last_seen.get(c, now)
                 time_since_last_seen = now - last_seen
 
-                if time_since_last_seen > 180:
+                if time_since_last_seen > CLIENT_DISCONNECT_TIMEOUT:
                     disconnected.append(c)
                     try:
                         c.close()
                     except Exception:
                         pass
-                elif time_since_last_seen > 60:
+                elif time_since_last_seen > HEARTBEAT_PING_TIMEOUT:
                     try:
                         send_data(c, b"SYS:PING")
-                        if DEBUG_MODE:
-                            print(
-                                f"Heartbeat: sent PING to {clients.get(c, 'Unknown')}"
-                            )
+                        logger.debug(
+                            "Heartbeat: sent PING to %s", clients.get(c, "Unknown")
+                        )
                     except Exception:
                         disconnected.append(c)
                         try:
@@ -365,15 +342,15 @@ def heartbeat_loop():
                     f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {name} disconnected (timeout). (Clients: {len(clients)})"
                 )
 
-            if disconnected and DEBUG_MODE:
-                print(f"Heartbeat: removed {len(disconnected)} inactive clients")
+            if disconnected:
+                logger.debug("Heartbeat: removed %d inactive clients", len(disconnected))
 
         except Exception:
             pass
 
 
-def on_closing():
-    print("\nClosing server (UI)...")
+def on_closing() -> None:
+    logger.info("Closing server (UI)...")
     stop_server()
     if window:
         window.destroy()
@@ -382,7 +359,7 @@ def on_closing():
 
 start_server()
 
-if config.get("gui", False):
+if gui_enabled:
     window.protocol("WM_DELETE_WINDOW", on_closing)
     window.mainloop()
 else:
@@ -390,5 +367,5 @@ else:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nClosing server (KeyboardInterrupt)...")
+        logger.info("Closing server (KeyboardInterrupt)...")
         stop_server()

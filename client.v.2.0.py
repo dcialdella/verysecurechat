@@ -4,107 +4,101 @@
 # Thanks ZeroCool22 for Debugging.
 # Thanks IGNIZ for Lot of changes
 #
+import argparse
+import datetime
+import json
+import logging
+import socket
 import sys
+import threading
+import time
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
-import socket
-import threading
-import datetime
-import json
-import gnupg
-import struct
-import time
-import platform
+from typing import Any
 
-TCP_KEEPIDLE = 0x10 if platform.system() == "Darwin" else 16
-TCP_KEEPINTVL = 0x11 if platform.system() == "Darwin" else 18
-TCP_KEEPCNT = 0x12 if platform.system() == "Darwin" else 19
+from src.crypto import (
+    create_gpg,
+    decrypt_message,
+    encrypt_message,
+    get_valid_sorted_keys,
+    list_private_keys,
+    list_public_keys,
+)
+from src.logger import setup_logging
+from src.protocol import recv_data, send_data
 
+CLIENT_TIMEOUT: int = 180
+TIMEOUT_CHECK_INTERVAL_MS: int = 30000
+SEND_DELAY: float = 0.2
 
-def send_data(sock, data):
-    sock.sendall(struct.pack("!I", len(data)))
-    sock.sendall(data)
+arg_parser = argparse.ArgumentParser(description="VerySecureChat Client v2.7")
+arg_parser.add_argument("--config", default="client_config.json", help="Config file path")
+arg_parser.add_argument("--server", help="Server address")
+arg_parser.add_argument("--port", type=int, help="Server port")
+arg_parser.add_argument("--gpgid", help="GPG identity UID to use")
+arg_parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+arg_parser.add_argument("--no-debug", action="store_true", help="Disable debug mode")
+cli_args, _ = arg_parser.parse_known_args()
 
-
-def recvall(sock, n):
-    data = bytearray()
-    while len(data) < n:
-        packet = sock.recv(n - len(data))
-        if not packet:
-            return None
-        data.extend(packet)
-    return bytes(data)
-
-
-def recv_data(sock):
-    raw_msglen = recvall(sock, 4)
-    if not raw_msglen:
-        return None
-    msglen = struct.unpack("!I", raw_msglen)[0]
-    return recvall(sock, msglen)
-
+logger = setup_logging("client")
 
 try:
-    with open("client_config.json", "r") as configFile:
-        config = json.load(configFile)
+    with open(cli_args.config, "r") as configFile:
+        config: dict[str, Any] = json.load(configFile)
 except FileNotFoundError:
-    print("Warning: client_config.json not found, client will close.")
+    logger.warning("%s not found, client will close.", cli_args.config)
     sys.exit("No config file. Please create client_config.json.")
 
-client = None
-key_map = {}
-valid_public_keys = []
-valid_private_keys = []
-last_activity = None
-client_timeout = 180  # 3 minutes
-selected_public_key = None
+client: socket.socket | None = None
+key_map: dict[int, dict[str, Any]] = {}
+valid_public_keys: list[dict[str, Any]] = []
+valid_private_keys: list[dict[str, Any]] = []
+last_activity: float | None = None
+selected_public_key: dict[str, Any] | None = None
 
-HOST_ADDR = config.get("server", "")
-HOST_PORT = config.get("port", 13031)
-debug_mode = config.get("debug", False)
+HOST_ADDR: str = cli_args.server or config.get("server", "")
+HOST_PORT: int = cli_args.port or config.get("port", 13031)
+
+debug_mode: bool
+if cli_args.debug:
+    debug_mode = True
+elif cli_args.no_debug:
+    debug_mode = False
+else:
+    debug_mode = config.get("debug", False)
+
+if debug_mode:
+    for handler in logging.getLogger().handlers:
+        handler.setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
 
 if not HOST_ADDR or not HOST_PORT:
     sys.exit("No server IP or PORT in configuration.")
 
 try:
-    gpg = gnupg.GPG()
-    public_keys = gpg.list_keys()
-    private_keys = gpg.list_keys(True)
+    gpg = create_gpg()
+    public_keys = list_public_keys(gpg)
+    private_keys = list_private_keys(gpg)
     if debug_mode:
-        print("=== DEBUG: Private keys found ===")
+        logger.debug("Private keys found:")
         for key in private_keys:
-            print(f"  Key ID: {key['keyid']}, UID: {key.get('uids', [])}")
+            logger.debug("  Key ID: %s, UID: %s", key["keyid"], key.get("uids", []))
 except Exception as e:
-    print(f"Critical Error: GPG not installed or in PATH: {e}")
+    logger.critical("GPG not installed or in PATH: %s", e)
     sys.exit("Please install GPG on your system (e.g., brew install gnupg)")
 
-GPGuidDestino = config.get("GPGid", "182DA782")
-
-
-def is_valid_key(key):
-    return not key.get("expired", False) and not key.get("revoked", False)
-
-
-valid_public_keys = sorted(
-    [key for key in public_keys if is_valid_key(key)],
-    key=lambda k: k.get("uids", [""])[0],
-    reverse=True,
-)
-valid_private_keys = sorted(
-    [key for key in private_keys if is_valid_key(key)],
-    key=lambda k: k.get("uids", [""])[0],
-    reverse=True,
-)
+valid_public_keys = get_valid_sorted_keys(gpg, private=False)
+valid_private_keys = get_valid_sorted_keys(gpg, private=True)
 
 window = tk.Tk()
 window.title("Cliente v 2.7 (VerySecureChat)")
-username = " "
+username: str = " "
 
-BG_COLOR = "#1a1b26"
-FG_COLOR = "#c0caf5"
-ACCENT = "#7aa2f7"
-BTN_BG = "#3d59a1"
+BG_COLOR: str = "#1a1b26"
+FG_COLOR: str = "#c0caf5"
+ACCENT: str = "#7aa2f7"
+BTN_BG: str = "#3d59a1"
 window.configure(bg=BG_COLOR)
 
 style = ttk.Style()
@@ -138,9 +132,11 @@ keyNames = (
 )
 entName["values"] = keyNames
 if keyNames:
-    # Pre-select the saved GPGid from config
+    cli_gpgid = cli_args.gpgid
     saved_gpgid = config.get("GPGid", "")
-    if saved_gpgid and saved_gpgid in keyNames:
+    if cli_gpgid:
+        entNameText.set(cli_gpgid)
+    elif saved_gpgid and saved_gpgid in keyNames:
         entNameText.set(saved_gpgid)
     else:
         entNameText.set(keyNames[0])
@@ -156,6 +152,11 @@ btnReload = ttk.Button(
     topFrame, text="🔄 Recargar Llaves", command=lambda: reload_keys()
 )
 btnReload.pack(side=tk.LEFT, padx=5)
+
+lblStatus = tk.Label(
+    topFrame, text="● Desconectado", fg="#f7768e", bg=BG_COLOR, font=("Helvetica", 10)
+)
+lblStatus.pack(side=tk.LEFT, padx=10)
 topFrame.pack(side=tk.TOP, pady=15)
 
 displayFrame = ttk.Frame(window)
@@ -212,7 +213,7 @@ tkUserList = tk.Listbox(
     font=("Helvetica", 12),
 )
 tkUserList.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0))
-key_map = {}  # tkUserList index -> key dict
+key_map = {}
 tkUserList.insert(0, "<SELECT RECIPIENT>")
 for i, key in enumerate(valid_public_keys, start=1):
     val = key["uids"][0] if key.get("uids") else "Unknown ID"
@@ -221,21 +222,17 @@ for i, key in enumerate(valid_public_keys, start=1):
 tkUserList.select_set(0)
 
 
-def reload_keys():
+def set_status(text: str, color: str) -> None:
+    lblStatus.config(text=text, fg=color)
+
+
+def reload_keys() -> None:
     global public_keys, private_keys, valid_public_keys, valid_private_keys, key_map
     try:
-        public_keys = gpg.list_keys()
-        private_keys = gpg.list_keys(True)
-        valid_public_keys = sorted(
-            [key for key in public_keys if is_valid_key(key)],
-            key=lambda k: k.get("uids", [""])[0],
-            reverse=True,
-        )
-        valid_private_keys = sorted(
-            [key for key in private_keys if is_valid_key(key)],
-            key=lambda k: k.get("uids", [""])[0],
-            reverse=True,
-        )
+        public_keys = list_public_keys(gpg)
+        private_keys = list_private_keys(gpg)
+        valid_public_keys = get_valid_sorted_keys(gpg, private=False)
+        valid_private_keys = get_valid_sorted_keys(gpg, private=True)
 
         tkUserList.delete(0, tk.END)
         key_map = {}
@@ -245,13 +242,12 @@ def reload_keys():
             tkUserList.insert(i, val)
             key_map[i] = key
         tkUserList.select_set(0)
-        if debug_mode:
-            print("GPG keys reloaded.")
+        logger.debug("GPG keys reloaded.")
     except Exception as e:
         messagebox.showerror("ERROR!!!", f"Failed to reload GPG: {e}")
 
 
-def connect():
+def connect() -> None:
     global username, client, selected_public_key, config
     if not valid_private_keys:
         messagebox.showerror(
@@ -278,19 +274,19 @@ def connect():
 
     username = entName.get()
 
-    # Save the selected GPG private key ID to config
     saved_gpgid = config.get("GPGid", "")
     if username != saved_gpgid:
         config["GPGid"] = username
-        with open("client_config.json", "w") as configFile:
+        with open(cli_args.config, "w") as configFile:
             json.dump(config, configFile, indent=2)
 
     connect_to_server(username)
 
 
-def connect_to_server(name):
+def connect_to_server(name: str) -> None:
     global client, last_activity
     try:
+        set_status("● Conectando...", "#e0af68")
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         client.settimeout(None)
@@ -307,16 +303,19 @@ def connect_to_server(name):
         tkUserList.config(state="disabled")
         tkMessage.focus_set()
 
+        set_status("● Conectado", "#9ece6a")
+
         threading.Thread(
             target=receive_message_from_server, args=(client,), daemon=True
         ).start()
     except Exception as e:
+        set_status("● Desconectado", "#f7768e")
         messagebox.showerror(
             "ERROR!!!", f"Error connecting to server {HOST_ADDR}:{HOST_PORT}.\n{e}"
         )
 
 
-def handle_disconnection():
+def handle_disconnection() -> None:
     global client, selected_public_key
     selected_public_key = None
     if client:
@@ -334,25 +333,25 @@ def handle_disconnection():
     tkMessage.config(state="disabled")
     tkUserList.select_set(0)
     tkUserList.config(state="normal")
+    set_status("● Desconectado", "#f7768e")
 
 
-def start_client_timeout_check():
-    window.after(30000, check_client_timeout)
+def start_client_timeout_check() -> None:
+    window.after(TIMEOUT_CHECK_INTERVAL_MS, check_client_timeout)
 
 
-def check_client_timeout():
+def check_client_timeout() -> None:
     global last_activity, client
     if client is not None and last_activity is not None:
-        if time.time() - last_activity > client_timeout:
-            if debug_mode:
-                print("Client timeout: disconnecting due to inactivity")
+        if time.time() - last_activity > CLIENT_TIMEOUT:
+            logger.debug("Client timeout: disconnecting due to inactivity")
             handle_disconnection()
         else:
             start_client_timeout_check()
 
 
-def insert_text_safe(text, tag=None):
-    def _insert():
+def insert_text_safe(text: str, tag: str | None = None) -> None:
+    def _insert() -> None:
         tkDisplay.config(state="normal")
         if tag:
             tkDisplay.insert(tk.END, text, tag)
@@ -364,7 +363,7 @@ def insert_text_safe(text, tag=None):
     window.after(0, _insert)
 
 
-def receive_message_from_server(sck):
+def receive_message_from_server(sck: socket.socket) -> None:
     global last_activity
     while True:
         try:
@@ -384,8 +383,7 @@ def receive_message_from_server(sck):
             continue
 
         if from_server.startswith("SYS:ACK:"):
-            if debug_mode:
-                print(f"Message acknowledged by server: {from_server}")
+            logger.debug("Message acknowledged by server: %s", from_server)
             continue
 
         last_activity = time.time()
@@ -393,32 +391,27 @@ def receive_message_from_server(sck):
         cuando = datetime.datetime.now()
 
         if "-----BEGIN PGP" in from_server:
-            if debug_mode:
-                print(
-                    f"--- RECEIVED ENCRYPTED ---\n{from_server[:100]}...\n--- END ---"
-                )
+            logger.debug("Received encrypted:\n%s...", from_server[:100])
             try:
-                # Convert string to bytes for GPG
                 encrypted_bytes = from_server.encode("utf-8")
 
-                # First try simple decrypt
-                decrypted_data = gpg.decrypt(encrypted_bytes)
+                decrypted_data = decrypt_message(gpg, encrypted_bytes)
 
                 if not decrypted_data.ok:
-                    # Try with --try-all-secrets as fallback
-                    decrypted_data = gpg.decrypt(
-                        encrypted_bytes, extra_args=["--try-all-secrets"]
+                    decrypted_data = decrypt_message(
+                        gpg, encrypted_bytes, extra_args=["--try-all-secrets"]
                     )
 
-                print(
-                    f"[RECV] decrypt ok={decrypted_data.ok}, status={decrypted_data.status}"
+                logger.debug(
+                    "decrypt ok=%s, status=%s",
+                    decrypted_data.ok, decrypted_data.status
                 )
 
                 if decrypted_data.ok:
                     data = decrypted_data.data
                     if isinstance(data, bytes):
                         data = data.decode("utf-8", errors="replace")
-                    print(f"[RECV] decrypted: {data}")
+                    logger.debug("decrypted: %s", data)
                     insert_text_safe(
                         f"IN: {cuando} - {data}\n",
                         "tag_your_message2",
@@ -429,8 +422,7 @@ def receive_message_from_server(sck):
                         "tag_your_message2",
                     )
             except Exception as e:
-                if debug_mode:
-                    print(f"[DECRYPT] Exception: {e}")
+                logger.debug("Decrypt exception: %s", e)
                 insert_text_safe(
                     f"IN: {cuando} - [DECRYPT ERROR: {e}]\n", "tag_your_message2"
                 )
@@ -444,7 +436,7 @@ def receive_message_from_server(sck):
     window.after(0, handle_disconnection)
 
 
-def getChatMessage(msg):
+def getChatMessage(msg: str) -> None:
     global last_activity
     msg = msg.strip()
     if not msg:
@@ -458,7 +450,7 @@ def getChatMessage(msg):
     tkMessage.delete("1.0", tk.END)
 
 
-def send_msg_to_server(msg):
+def send_msg_to_server(msg: str) -> None:
     global client
     client_msg = str(msg)
 
@@ -480,29 +472,23 @@ def send_msg_to_server(msg):
             recipient_fingerprint = key.get("fingerprint", "")
             cuando = datetime.datetime.now()
 
-            if debug_mode:
-                print(
-                    f"[SEND] Encrypting to recipient={recipient}, keyid={recipient_keyid}, fingerprint={recipient_fingerprint}"
-                )
+            logger.debug(
+                "Encrypting to recipient=%s, keyid=%s, fingerprint=%s",
+                recipient, recipient_keyid, recipient_fingerprint
+            )
 
-            # Use fingerprint if available, otherwise keyid
             encrypt_key = recipient_fingerprint or recipient_keyid
             try:
-                # Encrypt using the key directly
-                encrypted_data = gpg.encrypt(client_msg, encrypt_key, always_trust=True)
+                encrypted_data = encrypt_message(gpg, client_msg, encrypt_key)
                 if not encrypted_data.ok:
-                    if debug_mode:
-                        print(
-                            f"SEND: {cuando}. OK: False (Key for {recipient} unusable)"
-                        )
+                    logger.debug("SEND: %s. OK: False (Key for %s unusable)", cuando, recipient)
                     continue
 
                 encrypted_string = str(encrypted_data)
-                if debug_mode:
-                    print(f"SEND: {cuando}. OK: True")
-                    print(f"--- SENT ENCRYPTED ---\n{encrypted_string}\n--- END ---")
+                logger.debug("SEND: %s. OK: True", cuando)
+                logger.debug("Sent encrypted:\n%s\n--- END ---", encrypted_string)
                 send_data(client, encrypted_string.encode("utf-8"))
-                time.sleep(0.2)
+                time.sleep(SEND_DELAY)
             except Exception as e:
                 insert_text_safe(
                     f"Error sending to {recipient}: {e}\n", "tag_your_message2"
